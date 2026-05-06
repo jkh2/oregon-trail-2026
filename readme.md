@@ -46,6 +46,7 @@ The AI handles everything human:
 
 ## Features
 
+- 🎨 **AI-generated scene illustrations** — every turn produces a unique image of the scene via Pollinations.AI (free, no key required)
 - 🏕️ Three professions with real starting bonuses (Farmer, Carpenter, Banker)
 - 📍 11 historical landmarks from Alcove Spring to Oregon City
 - ☀️ Dynamic weather system (Clear, Cloudy, Rain, Storm, Snow, Hot)
@@ -112,6 +113,9 @@ JSON enforcement is what keeps the game stable. The AI never touches the UI — 
 **Memory System**
 The last 16 conversation turns and last 8 event summaries are injected into every prompt. The AI knows your trail history without needing a database.
 
+**Image Layer (Pollinations.AI — Flux)**
+After each turn, the AI crafts an `image_prompt` from the scene it just narrated. The frontend appends frontier style guidance and requests a unique image from Pollinations.AI — no key, no cost, no account. Images load asynchronously behind a shimmer skeleton so they never block the game. Silent failure handling means a slow response never breaks the experience.
+
 ---
 
 ## Stack
@@ -119,7 +123,8 @@ The last 16 conversation turns and last 8 event summaries are injected into ever
 | Layer | Choice | Why |
 |-------|--------|-----|
 | Frontend | Vanilla HTML/CSS/JS | Single file, zero dependencies, instant deploy |
-| AI | Groq API (Llama 3.3 70B) | Free tier, fast inference, strong narrative quality |
+| AI Narrative | Groq API (Llama 3.3 70B) | Free tier, fast inference, strong narrative quality |
+| AI Images | Pollinations.AI (Flux) | Completely free, no key required, solid quality |
 | Fonts | Playfair Display, Courier Prime, IM Fell English | Period-appropriate, readable |
 | Hosting | GitHub Pages | Free, fast, permanent |
 
