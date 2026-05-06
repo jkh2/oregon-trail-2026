@@ -2,10 +2,12 @@
 
 > *A living simulation. Not a scripted game.*
 
+### 🎮 [Play Now → jkh2.github.io/oregon-trail-2026](https://jkh2.github.io/oregon-trail-2026)
+
 A modern reimagining of the classic Oregon Trail powered by a single AI system. Built as a single HTML file — no framework, no build step, no backend. Deploy anywhere in seconds.
 
 ---
-[➡️ **PLAY OREGON TRAIL 2026 NOW**](https://jkh2.github.io/oregon-trail-2026/)
+
 ## What It Is
 
 The Oregon Trail (2026) is a narrative-driven frontier survival game where you lead a wagon party from Independence, Missouri to Oregon City — 2,000 miles of American frontier, circa 1848.
@@ -56,6 +58,18 @@ The AI handles everything human:
 
 ---
 
+## Getting Started
+
+This game runs on **Groq's free AI API** — no cost, no credit card required.
+
+1. Go to [console.groq.com](https://console.groq.com) and create a free account
+2. Navigate to **API Keys → Create Key** and copy your key (starts with `gsk_`)
+3. Open the game, paste your key on the first screen, and begin
+
+Your key stays in your browser only. It is never transmitted anywhere except directly to Groq's API.
+
+---
+
 ## Deploy to GitHub Pages
 
 1. Fork or clone this repo
@@ -74,8 +88,8 @@ The game is a single HTML file with three layers:
 **Game Engine (JavaScript)**
 Handles resource math, daily consumption, location tracking, landmark detection, and win/death conditions. Pure deterministic code — no AI involved in these calculations.
 
-**AI Layer (Anthropic Claude API)**
-One API call per turn. The system prompt injects the full game state (day, location, resources, weather, party status, recent events) and instructs Claude to return strict JSON:
+**AI Layer (Groq API — Llama 3.3 70B)**
+One API call per turn. The system prompt injects the full game state (day, location, resources, weather, party status, recent events) and instructs the model to return strict JSON:
 
 ```json
 {
@@ -105,7 +119,7 @@ The last 16 conversation turns and last 8 event summaries are injected into ever
 | Layer | Choice | Why |
 |-------|--------|-----|
 | Frontend | Vanilla HTML/CSS/JS | Single file, zero dependencies, instant deploy |
-| AI | Claude Sonnet (Anthropic API) | Narrative quality, JSON reliability |
+| AI | Groq API (Llama 3.3 70B) | Free tier, fast inference, strong narrative quality |
 | Fonts | Playfair Display, Courier Prime, IM Fell English | Period-appropriate, readable |
 | Hosting | GitHub Pages | Free, fast, permanent |
 
