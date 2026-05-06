@@ -5,7 +5,7 @@
 A modern reimagining of the classic Oregon Trail powered by a single AI system. Built as a single HTML file — no framework, no build step, no backend. Deploy anywhere in seconds.
 
 ---
-
+[➡️ **PLAY OREGON TRAIL 2026 NOW**](https://jkh2.github.io/oregon-trail-2026/)
 ## What It Is
 
 The Oregon Trail (2026) is a narrative-driven frontier survival game where you lead a wagon party from Independence, Missouri to Oregon City — 2,000 miles of American frontier, circa 1848.
