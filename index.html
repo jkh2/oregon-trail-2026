@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Oregon Trail — 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #2c1810;
+  --paper: #f0e6c8;
+  --shadow: #1a0e06;
+  --rust: #8b2c2c;
+  --gold: #c8952a;
+  --dark-bg: #0d0a06;
+  --panel-bg: #110d08;
+  --border: #3d2b1a;
+  --green: #5a8a3c;
+  --danger: #8b2c2c;
+  --warn: #c8952a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family: 'Courier Prime', monospace;
+  background: var(--dark-bg);
+  color: var(--paper);
+}
+
+/* ─── TITLE SCREEN ─── */
+#screen-title {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at 50% 35%, #241508 0%, #0d0a06 65%);
+  padding:2rem; z-index:10;
+}
+.wagon-icon { font-size:3.5rem; margin-bottom:0.8rem; opacity:0.7; }
+.game-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2.2rem,6vw,4rem);
+  font-weight:900; text-align:center;
+  color:var(--paper); letter-spacing:0.04em;
+  text-shadow:0 0 50px rgba(200,149,42,0.25);
+}
+.game-sub {
+  font-size:0.7rem; letter-spacing:0.45em;
+  color:var(--gold); margin-top:0.5rem; margin-bottom:0.3rem;
+  text-transform:uppercase;
+}
+.divider {
+  width:180px; height:1px;
+  background:linear-gradient(to right, transparent, var(--gold), transparent);
+  margin:1.2rem auto;
+}
+.setup-box {
+  width:100%; max-width:460px;
+  background:rgba(17,13,8,0.9);
+  border:1px solid var(--border);
+  padding:1.8rem; display:flex;
+  flex-direction:column; gap:1.2rem;
+}
+.flabel {
+  display:block; font-size:0.65rem;
+  letter-spacing:0.25em; color:var(--gold);
+  text-transform:uppercase; margin-bottom:0.4rem;
+}
+.finput {
+  width:100%; background:rgba(240,230,200,0.07);
+  border:1px solid var(--border); color:var(--paper);
+  font-family:'Courier Prime',monospace; font-size:1rem;
+  padding:0.6rem 0.8rem; outline:none;
+  transition:border-color 0.2s;
+}
+.finput:focus { border-color:var(--gold); }
+.prof-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; }
+.prof-btn {
+  background:rgba(240,230,200,0.04);
+  border:1px solid var(--border);
+  color:var(--paper); font-family:'Courier Prime',monospace;
+  font-size:0.75rem; padding:0.7rem 0.3rem;
+  cursor:pointer; transition:all 0.2s; text-align:center;
+}
+.prof-btn:hover, .prof-btn.sel {
+  background:rgba(200,149,42,0.12);
+  border-color:var(--gold); color:var(--gold);
+}
+.prof-name { font-weight:700; display:block; font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.25rem; }
+.prof-desc { font-size:0.65rem; opacity:0.6; line-height:1.4; }
+.start-btn {
+  background:var(--rust); border:none; color:var(--paper);
+  font-family:'Playfair Display',serif; font-size:1.05rem;
+  font-weight:700; padding:0.85rem; cursor:pointer;
+  letter-spacing:0.08em; transition:all 0.2s; margin-top:0.3rem;
+}
+.start-btn:hover { background:#a33535; transform:translateY(-1px); }
+
+/* ─── GAME SCREEN ─── */
+#screen-game {
+  position:fixed; inset:0;
+  display:none; flex-direction:row;
+}
+#screen-game.active { display:flex; }
+
+.status-panel {
+  width:220px; min-width:220px;
+  background:var(--panel-bg);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  padding:1rem 0.9rem; gap:0.9rem;
+  overflow-y:auto; flex-shrink:0;
+}
+.s-head {
+  font-size:0.6rem; letter-spacing:0.3em;
+  color:var(--gold); text-transform:uppercase;
+  border-bottom:1px solid rgba(61,43,26,0.5);
+  padding-bottom:0.4rem;
+}
+.day-big {
+  font-family:'Playfair Display',serif;
+  font-size:2rem; font-weight:900; color:var(--paper);
+  line-height:1;
+}
+.day-lbl { font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; }
+.loc-text { font-size:0.75rem; color:rgba(240,230,200,0.65); font-style:italic; line-height:1.4; }
+
+.pbar-wrap { display:flex; flex-direction:column; gap:0.12rem; }
+.pbar-row { display:flex; justify-content:space-between; font-size:0.6rem; letter-spacing:0.12em; color:var(--gold); text-transform:uppercase; }
+.pbar { height:5px; background:rgba(240,230,200,0.08); border:1px solid rgba(61,43,26,0.5); position:relative; overflow:hidden; }
+.pfill { height:100%; position:absolute; left:0; top:0; transition:width 0.5s ease; }
+.pf-food  { background:var(--gold); }
+.pf-health{ background:var(--green); }
+.pf-morale{ background:#4a7a8a; }
+.pf-danger{ background:var(--danger); }
+.pf-warn  { background:var(--warn); }
+
+.trail-bar { height:7px; background:rgba(240,230,200,0.05); border:1px solid rgba(61,43,26,0.5); position:relative; overflow:hidden; }
+.trail-fill { height:100%; background:linear-gradient(to right,var(--rust),var(--gold)); transition:width 0.8s ease; }
+.trail-lbl { font-size:0.6rem; color:rgba(240,230,200,0.45); letter-spacing:0.08em; margin-top:0.2rem; }
+
+.weather-row { display:flex; align-items:center; gap:0.5rem; }
+.w-icon { font-size:1.1rem; }
+.w-text { font-size:0.72rem; color:rgba(240,230,200,0.65); }
+
+.pmember {
+  padding:0.45rem; background:rgba(240,230,200,0.02);
+  border:1px solid rgba(61,43,26,0.3);
+  display:flex; flex-direction:column; gap:0.15rem;
+}
+.pname { font-size:0.78rem; font-weight:700; display:flex; align-items:center; gap:0.35rem; }
+.pdot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.pdot.dead { background:var(--danger); }
+.prole { font-size:0.62rem; color:rgba(240,230,200,0.45); font-style:italic; }
+
+.oxen-row { font-size:0.72rem; color:rgba(240,230,200,0.55); }
+
+/* ─── NARRATIVE PANEL ─── */
+.narr-panel {
+  flex:1; display:flex; flex-direction:column;
+  background:#0d0905; overflow:hidden;
+}
+.narr-header {
+  padding:0.85rem 1.4rem;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(17,13,8,0.6); flex-shrink:0;
+}
+.narr-title { font-size:0.65rem; letter-spacing:0.3em; color:var(--gold); text-transform:uppercase; }
+.narr-loc { font-size:0.65rem; color:rgba(200,149,42,0.45); letter-spacing:0.1em; }
+
+.narr-scroll {
+  flex:1; overflow-y:auto; padding:1.3rem 1.4rem;
+  display:flex; flex-direction:column; gap:1.1rem;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.narr-scroll::-webkit-scrollbar { width:3px; }
+.narr-scroll::-webkit-scrollbar-thumb { background:var(--border); }
+
+.turn-block {
+  display:flex; flex-direction:column; gap:0.7rem;
+  padding-bottom:1rem; border-bottom:1px solid rgba(61,43,26,0.25);
+  animation:fadein 0.35s ease;
+}
+@keyframes fadein { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+.player-line { display:flex; gap:0.5rem; align-items:flex-start; }
+.player-prefix { color:var(--gold); font-weight:700; font-size:0.85rem; flex-shrink:0; padding-top:0.05rem; }
+.player-text { color:rgba(240,230,200,0.6); font-style:italic; font-size:0.88rem; line-height:1.5; }
+
+.narr-text {
+  font-family:'IM Fell English',serif;
+  font-size:0.98rem; line-height:1.85; color:var(--paper);
+  padding-left:0.8rem;
+  border-left:2px solid rgba(200,149,42,0.25);
+}
+.dial-block { display:flex; flex-direction:column; gap:0.35rem; padding-left:0.8rem; }
+.dial-line { display:flex; gap:0.5rem; font-size:0.83rem; line-height:1.5; }
+.dial-who { color:var(--gold); font-weight:700; flex-shrink:0; min-width:64px; }
+.dial-say { color:rgba(240,230,200,0.75); font-style:italic; }
+
+.loading-row { display:flex; gap:0.3rem; padding:0.4rem 0.8rem; }
+.ldot { width:5px; height:5px; background:var(--gold); border-radius:50%; animation:ldot 1.2s ease-in-out infinite; }
+.ldot:nth-child(2){animation-delay:0.2s}
+.ldot:nth-child(3){animation-delay:0.4s}
+@keyframes ldot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.1)} }
+
+.err-msg { font-size:0.78rem; color:var(--rust); font-style:italic; padding:0.3rem 0; }
+
+/* ─── INPUT ─── */
+.input-area {
+  padding:0.9rem 1.4rem;
+  border-top:1px solid var(--border);
+  background:rgba(17,13,8,0.6);
+  display:flex; flex-direction:column; gap:0.45rem; flex-shrink:0;
+}
+.input-lbl { font-size:0.6rem; letter-spacing:0.22em; color:rgba(200,149,42,0.55); text-transform:uppercase; }
+.input-row { display:flex; gap:0.7rem; }
+.decision-inp {
+  flex:1; background:rgba(240,230,200,0.06);
+  border:1px solid var(--border); color:var(--paper);
+  font-family:'Courier Prime',monospace; font-size:0.92rem;
+  padding:0.65rem 0.9rem; outline:none; transition:border-color 0.2s;
+}
+.decision-inp:focus { border-color:var(--gold); }
+.decision-inp::placeholder { color:rgba(240,230,200,0.2); }
+.go-btn {
+  background:var(--rust); border:none; color:var(--paper);
+  font-family:'Playfair Display',serif; font-weight:700;
+  font-size:0.88rem; padding:0.65rem 1.1rem;
+  cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  letter-spacing:0.05em;
+}
+.go-btn:hover:not(:disabled) { background:#a33535; }
+.go-btn:disabled { opacity:0.45; cursor:not-allowed; }
+
+/* ─── DEATH SCREEN ─── */
+#screen-death {
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:1.2rem; padding:2rem;
+  background:radial-gradient(ellipse at 50% 40%,#160e09 0%,#070504 70%);
+  z-index:20;
+}
+#screen-death.active { display:flex; }
+
+.stone-wrap { position:relative; width:260px; }
+.stone-wrap svg { width:100%; display:block; }
+.stone-text {
+  position:absolute; top:42%; left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center; width:185px;
+}
+.rip { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; color:#c8b89a; letter-spacing:0.2em; }
+.d-name { font-family:'IM Fell English',serif; font-size:1rem; color:#a89878; margin:0.2rem 0; }
+.d-info { font-size:0.65rem; color:#887860; font-family:'Courier Prime',monospace; }
+.d-cause { font-size:0.68rem; color:var(--rust); margin-top:0.4rem; font-style:italic; font-family:'IM Fell English',serif; }
+
+.epitaph-wrap { display:flex; flex-direction:column; align-items:center; gap:0.7rem; width:100%; max-width:380px; }
+.epi-lbl { font-size:0.65rem; letter-spacing:0.25em; color:rgba(200,180,150,0.45); text-transform:uppercase; }
+.epi-inp {
+  width:100%; background:rgba(240,230,200,0.04);
+  border:1px solid rgba(61,43,26,0.5); color:#c8b89a;
+  font-family:'IM Fell English',serif; font-size:0.88rem;
+  padding:0.65rem; text-align:center; outline:none; font-style:italic;
+}
+.epi-inp::placeholder { color:rgba(200,180,150,0.22); }
+
+.again-btn {
+  background:transparent; border:1px solid rgba(61,43,26,0.6);
+  color:rgba(200,180,150,0.55); font-family:'Courier Prime',monospace;
+  font-size:0.7rem; letter-spacing:0.2em; padding:0.55rem 1.4rem;
+  cursor:pointer; text-transform:uppercase; transition:all 0.2s; margin-top:0.3rem;
+}
+.again-btn:hover { border-color:var(--rust); color:var(--paper); }
+
+/* ─── WIN SCREEN ─── */
+#screen-win {
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:1.2rem; padding:2rem; text-align:center;
+  background:radial-gradient(ellipse at 50% 40%,#0a1a0c 0%,#060a07 70%);
+  z-index:20;
+}
+#screen-win.active { display:flex; }
+.win-title {
+  font-family:'Playfair Display',serif; font-size:3rem;
+  font-weight:900; color:var(--paper);
+  text-shadow:0 0 50px rgba(90,138,60,0.35);
+}
+.win-sub {
+  font-family:'IM Fell English',serif; font-size:1rem;
+  color:rgba(240,230,200,0.65); max-width:420px; line-height:1.7;
+}
+.win-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; margin:0.5rem 0; }
+.win-stat {
+  display:flex; flex-direction:column; align-items:center; gap:0.25rem;
+  padding:0.9rem; border:1px solid rgba(90,138,60,0.25);
+  background:rgba(90,138,60,0.04);
+}
+.win-val { font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:900; color:#7ab85a; }
+.win-lbl { font-size:0.6rem; letter-spacing:0.2em; color:rgba(240,230,200,0.45); text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ TITLE SCREEN ══════════════════════════ -->
+<div id="screen-title">
+  <div class="wagon-icon">🐂</div>
+  <h1 class="game-title">The Oregon Trail</h1>
+  <div class="game-sub">2026 Edition &nbsp;·&nbsp; AI-Driven Frontier Simulation</div>
+  <div class="divider"></div>
+
+  <div class="setup-box">
+    <div>
+      <label class="flabel">Your Name</label>
+      <input id="inp-name" class="finput" type="text" placeholder="Thomas Harwick" maxlength="24">
+    </div>
+    <div>
+      <label class="flabel">Profession</label>
+      <div class="prof-grid">
+        <button class="prof-btn sel" data-p="farmer" onclick="pickProf(this,'farmer')">
+          <span class="prof-name">Farmer</span>
+          <span class="prof-desc">+100 food<br>+10 morale</span>
+        </button>
+        <button class="prof-btn" data-p="carpenter" onclick="pickProf(this,'carpenter')">
+          <span class="prof-name">Carpenter</span>
+          <span class="prof-desc">Sturdier wagon<br>+20 health</span>
+        </button>
+        <button class="prof-btn" data-p="banker" onclick="pickProf(this,'banker')">
+          <span class="prof-name">Banker</span>
+          <span class="prof-desc">Trade savvy<br>+20 morale</span>
+        </button>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startGame()">Begin the Journey West →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ GAME SCREEN ══════════════════════════ -->
+<div id="screen-game">
+
+  <!-- LEFT STATUS PANEL -->
+  <div class="status-panel">
+
+    <div>
+      <div class="s-head">Status</div>
+      <div style="margin-top:0.6rem">
+        <div class="day-lbl">Day</div>
+        <div class="day-big" id="s-day">1</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="s-head">Location</div>
+      <div class="loc-text" id="s-loc">Independence, Missouri</div>
+    </div>
+
+    <div>
+      <div class="s-head">Trail Progress</div>
+      <div class="trail-bar"><div class="trail-fill" id="s-trail" style="width:0%"></div></div>
+      <div class="trail-lbl" id="s-miles">0 / 2000 mi</div>
+    </div>
+
+    <div>
+      <div class="s-head">Weather</div>
+      <div class="weather-row">
+        <span class="w-icon" id="s-wicon">☀️</span>
+        <span class="w-text" id="s-weather">Clear</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="s-head">Supplies</div>
+      <div style="display:flex;flex-direction:column;gap:0.55rem">
+        <div class="pbar-wrap">
+          <div class="pbar-row"><span>Food</span><span id="s-food">200 lbs</span></div>
+          <div class="pbar"><div class="pfill pf-food" id="b-food" style="width:40%"></div></div>
+        </div>
+        <div class="pbar-wrap">
+          <div class="pbar-row"><span>Health</span><span id="s-health">100</span></div>
+          <div class="pbar"><div class="pfill pf-health" id="b-health" style="width:100%"></div></div>
+        </div>
+        <div class="pbar-wrap">
+          <div class="pbar-row"><span>Morale</span><span id="s-morale">80</span></div>
+          <div class="pbar"><div class="pfill pf-morale" id="b-morale" style="width:80%"></div></div>
+        </div>
+        <div class="oxen-row">🐂 Oxen: <span id="s-oxen">4</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="s-head">Party</div>
+      <div id="party-list" style="display:flex;flex-direction:column;gap:0.45rem"></div>
+    </div>
+
+  </div><!-- /status-panel -->
+
+  <!-- RIGHT NARRATIVE PANEL -->
+  <div class="narr-panel">
+    <div class="narr-header">
+      <span class="narr-title">Trail Journal</span>
+      <span class="narr-loc" id="h-loc">Independence, Missouri</span>
+    </div>
+
+    <div class="narr-scroll" id="narr-scroll"></div>
+
+    <div class="input-area">
+      <div class="input-lbl">What do you do?</div>
+      <div class="input-row">
+        <input id="inp-decision" class="decision-inp" type="text"
+               placeholder="Press onward… make camp… attempt the ford…"
+               onkeydown="if(event.key==='Enter')submitDecision()">
+        <button id="go-btn" class="go-btn" onclick="submitDecision()">Decide →</button>
+      </div>
+    </div>
+  </div><!-- /narr-panel -->
+
+</div><!-- /screen-game -->
+
+<!-- ══════════════════════════ DEATH SCREEN ══════════════════════════ -->
+<div id="screen-death">
+  <div class="stone-wrap">
+    <svg viewBox="0 0 260 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- Base -->
+      <rect x="20" y="285" width="220" height="15" rx="2" fill="#1e1610" stroke="#3d2b1a" stroke-width="1.5"/>
+      <!-- Body -->
+      <rect x="35" y="130" width="190" height="160" rx="3" fill="#181009" stroke="#3d2b1a" stroke-width="1.5"/>
+      <!-- Arch top -->
+      <path d="M35 145 Q130 20 225 145" fill="#181009" stroke="#3d2b1a" stroke-width="1.5"/>
+      <!-- Decorative cross -->
+      <line x1="130" y1="50" x2="130" y2="100" stroke="#3d2b1a" stroke-width="2"/>
+      <line x1="108" y1="68" x2="152" y2="68" stroke="#3d2b1a" stroke-width="2"/>
+      <!-- Grain lines -->
+      <line x1="55" y1="260" x2="205" y2="260" stroke="#3d2b1a" stroke-width="0.5" opacity="0.4"/>
+      <line x1="55" y1="268" x2="205" y2="268" stroke="#3d2b1a" stroke-width="0.3" opacity="0.3"/>
+    </svg>
+    <div class="stone-text">
+      <div class="rip">R.I.P.</div>
+      <div class="d-name" id="d-name"></div>
+      <div class="d-info" id="d-info"></div>
+      <div class="d-cause" id="d-cause"></div>
+    </div>
+  </div>
+
+  <div class="epitaph-wrap">
+    <div class="epi-lbl">Carve Your Epitaph</div>
+    <input class="epi-inp" id="epi-inp" type="text"
+           placeholder="They walked toward the sun and never stopped…" maxlength="75">
+    <button class="again-btn" onclick="resetGame()">Begin Again</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ WIN SCREEN ══════════════════════════ -->
+<div id="screen-win">
+  <div style="font-size:3.5rem">🌲</div>
+  <div class="win-title">Oregon City</div>
+  <div class="win-sub" id="win-msg"></div>
+  <div class="win-stats">
+    <div class="win-stat"><div class="win-val" id="w-days">—</div><div class="win-lbl">Days on Trail</div></div>
+    <div class="win-stat"><div class="win-val" id="w-health">—</div><div class="win-lbl">Final Health</div></div>
+    <div class="win-stat"><div class="win-val" id="w-food">—</div><div class="win-lbl">Food Remaining</div></div>
+  </div>
+  <button class="again-btn" style="border-color:rgba(90,138,60,0.35);color:rgba(200,230,200,0.6)" onclick="resetGame()">Walk the Trail Again</button>
+</div>
+
+<!-- ══════════════════════════ SCRIPT ══════════════════════════ -->
+<script>
+// ── Constants ──────────────────────────────────────────────
+const LANDMARKS = [
+  { name:"Alcove Spring",          dist:150  },
+  { name:"Fort Kearney",           dist:316  },
+  { name:"The Platte River",       dist:400  },
+  { name:"Chimney Rock",           dist:554  },
+  { name:"Fort Laramie",           dist:640  },
+  { name:"Independence Rock",      dist:935  },
+  { name:"South Pass",             dist:1000 },
+  { name:"Fort Hall",              dist:1288 },
+  { name:"Snake River Crossing",   dist:1500 },
+  { name:"The Dalles",             dist:1784 },
+  { name:"Oregon City",            dist:2000 }
+];
+
+const W_ICONS = { Clear:"☀️", Cloudy:"⛅", Rain:"🌧️", Storm:"⛈️", Snow:"❄️", Hot:"🌵" };
+
+const PROFESSIONS = {
+  farmer:    { food:+100, health:0,   morale:+10 },
+  carpenter: { food:0,    health:+20, morale:0   },
+  banker:    { food:-50,  health:0,   morale:+20 }
+};
+
+const DEFAULT_PARTY = [
+  { name:"Samuel", role:"Skeptic",  traits:"cautious, weathered",  alive:true },
+  { name:"Mary",   role:"Optimist", traits:"faithful, hopeful",     alive:true }
+];
+
+// ── State ───────────────────────────────────────────────────
+let G = {};          // game state
+let history = [];    // conversation history for API
+let busy = false;
+
+function newState(leader, prof) {
+  const b = PROFESSIONS[prof];
+  return {
+    leader, prof,
+    day: 1,
+    dist: 0,
+    maxDist: 2000,
+    loc: "Independence, Missouri",
+    weather: "Clear",
+    season: "Spring",
+    food:   Math.max(0,  200 + b.food),
+    health: Math.min(100, 80 + b.health),
+    morale: Math.min(100, 70 + b.morale),
+    oxen:   4,
+    party:  JSON.parse(JSON.stringify(DEFAULT_PARTY)),
+    events: [],
+    over:   false,
+    won:    false
+  };
+}
+
+// ── Profession picker ───────────────────────────────────────
+function pickProf(btn, p) {
+  document.querySelectorAll('.prof-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+// ── Start ───────────────────────────────────────────────────
+function startGame() {
+  const name = document.getElementById('inp-name').value.trim() || 'Thomas Harwick';
+  const prof = document.querySelector('.prof-btn.sel')?.dataset.p || 'farmer';
+  G = newState(name, prof);
+  history = [];
+
+  document.getElementById('screen-title').style.display = 'none';
+  document.getElementById('screen-game').classList.add('active');
+
+  renderStatus();
+  renderParty();
+  openingScene();
+}
+
+// ── Opening scene ───────────────────────────────────────────
+async function openingScene() {
+  lock(true);
+  const msg = `The year is 1848. ${G.leader} stands at the edge of Independence, Missouri, wagon loaded and oxen yoked. The trail west stretches beyond the horizon. Describe the scene as ${G.leader} begins — the sounds, the weight of what lies ahead, the first steps onto the trail. Then give me the first situation they must decide.`;
+  history.push({ role:"user", content: msg });
+  const loader = addLoader();
+  const resp = await callAI();
+  loader.remove();
+  if (resp) renderResponse(resp, null);
+  lock(false);
+  document.getElementById('inp-decision').focus();
+}
+
+// ── Submit decision ─────────────────────────────────────────
+async function submitDecision() {
+  const inp = document.getElementById('inp-decision');
+  const txt = inp.value.trim();
+  if (!txt || busy || G.over) return;
+  inp.value = '';
+  lock(true);
+
+  addPlayerLine(txt);
+  dailyTick();
+
+  const ctx = buildContext(txt);
+  history.push({ role:"user", content: ctx });
+
+  const loader = addLoader();
+  const resp = await callAI();
+  loader.remove();
+
+  if (resp) {
+    applyEffects(resp);
+    renderResponse(resp, txt);
+    G.day++;
+    renderStatus();
+    renderParty();
+    checkEnd();
+  }
+
+  lock(false);
+  if (!G.over) document.getElementById('inp-decision').focus();
+}
+
+function buildContext(decision) {
+  return `DAY ${G.day} | ${G.loc} | ${G.dist}/${G.maxDist} mi | Weather:${G.weather}
+Food:${G.food}lbs | Health:${G.health} | Morale:${G.morale} | Oxen:${G.oxen}
+Alive: ${G.party.filter(p=>p.alive).map(p=>p.name).join(', ')}
+Recent: ${G.events.slice(-4).join(' | ') || 'Journey just begun'}
+
+${G.leader} decides: "${decision}"
+
+Resolve this. Return JSON only.`;
+}
+
+function dailyTick() {
+  // Basic daily food consumption
+  const alive = G.party.filter(p=>p.alive).length + 1; // +1 for leader
+  const consume = Math.round(alive * 2.5 * (G.weather === 'Storm' || G.weather === 'Snow' ? 1.4 : 1));
+  G.food = Math.max(0, G.food - consume);
+  if (G.food === 0) G.health = Math.max(0, G.health - 4);
+}
+
+// ── AI Call ─────────────────────────────────────────────────
+function sysPrompt() {
+  const sk = G.party[0], op = G.party[1];
+  return `You are the narrator and simulation engine for The Oregon Trail (1848). ${G.leader} leads a wagon from Independence, Missouri to Oregon City — 2000 miles of American frontier.
+
+PARTY:
+- ${G.leader} (Leader, ${G.prof}): Bears the weight of every decision.
+- ${sk.name} (Skeptic): Cautious, weathered, plain-spoken. Questions decisions but stays loyal. References hardship.
+- ${op.name} (Optimist): Finds faith in difficulty. May reference scripture. Never naive — has seen the trail.
+
+YOUR THREE JOBS:
+1. NARRATE: 2–4 sentences. Grounded, vivid, historically accurate. Draw on real trail details — river crossings, disease (dysentery, cholera, fever), broken wagon wheels, oxen deaths, harsh weather, buffalo herds, other wagon parties, the Platte River, Chimney Rock, South Pass.
+2. DIALOGUE: 1–2 party member lines. Each voice must be unmistakably distinct. Max 20 words each.
+3. STATE EFFECTS: Realistic resource outcomes. Distance usually 10–25 miles/day. Bad decisions cost. Occasionally trigger events — a random illness, a river crossing, a storm, a fort encounter, hunting success or failure.
+
+RULES:
+- Serious frontier realism. No fantasy.
+- Reference classic Oregon Trail moments naturally (dysentery, broken axle, bad crossing).
+- Characters can reference what they know — "You have dysentery" should feel historically real, not like a game notification.
+- Weather changes occasionally. Oxen dying is catastrophic. Starvation is slow death.
+- Party members react to the specific decision — if it was foolish, Samuel says so.
+
+RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
+{
+  "narration": "string",
+  "dialogue": [{"character":"name","line":"string"}],
+  "state_effects": {
+    "food_change": 0,
+    "health_change": 0,
+    "morale_change": 0,
+    "oxen_change": 0,
+    "distance_change": 15
+  },
+  "event_summary": "five word summary",
+  "weather_update": "Clear"
+}`;
+}
+
+async function callAI() {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 900,
+        system: sysPrompt(),
+        messages: history
+      })
+    });
+
+    if (!res.ok) {
+      const e = await res.json();
+      console.error("API:", e);
+      addErr("Something went wrong on the trail. Try again.");
+      return null;
+    }
+
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    } catch(e) {
+      console.error("JSON parse:", raw);
+      addErr("The journal entry is unreadable. Try a different decision.");
+      return null;
+    }
+
+    history.push({ role:"assistant", content: raw });
+    // Keep history lean — last 16 messages
+    if (history.length > 16) history = history.slice(-16);
+
+    return parsed;
+  } catch(err) {
+    console.error("Network:", err);
+    addErr("Cannot reach the frontier. Check your connection.");
+    return null;
+  }
+}
+
+// ── Apply effects ───────────────────────────────────────────
+function applyEffects(r) {
+  const fx = r.state_effects || {};
+  G.food   = Math.max(0,   G.food   + (fx.food_change   || 0));
+  G.health = Math.max(0,   Math.min(100, G.health + (fx.health_change || 0)));
+  G.morale = Math.max(0,   Math.min(100, G.morale + (fx.morale_change || 0)));
+  G.oxen   = Math.max(0,   G.oxen   + (fx.oxen_change   || 0));
+  G.dist   = Math.min(G.maxDist, G.dist + (fx.distance_change || 15));
+
+  if (r.weather_update) G.weather = r.weather_update;
+  if (r.event_summary)  { G.events.push(r.event_summary); if (G.events.length > 8) G.events.shift(); }
+
+  // Update location label
+  G.loc = computeLocation();
+}
+
+function computeLocation() {
+  for (let i = LANDMARKS.length - 1; i >= 0; i--) {
+    if (G.dist >= LANDMARKS[i].dist) {
+      if (i === LANDMARKS.length - 1) return LANDMARKS[i].name;
+      const span = LANDMARKS[i+1].dist - LANDMARKS[i].dist;
+      const prog = G.dist - LANDMARKS[i].dist;
+      if (prog < span * 0.25) return `Near ${LANDMARKS[i].name}`;
+      if (prog > span * 0.75) return `Approaching ${LANDMARKS[i+1].name}`;
+      return `Between ${LANDMARKS[i].name} and ${LANDMARKS[i+1].name}`;
+    }
+  }
+  return "Independence, Missouri";
+}
+
+// ── Check end conditions ────────────────────────────────────
+function checkEnd() {
+  if (G.dist >= G.maxDist) { doWin(); return; }
+  if (G.health <= 0)         { doDeath("died of illness and exhaustion on the trail"); return; }
+  if (G.oxen  <= 0 && G.dist < G.maxDist - 80) { doDeath("was stranded on the trail without oxen"); return; }
+  if (G.food  <= 0 && G.health < 15)  { doDeath("perished from starvation"); return; }
+}
+
+function doDeath(cause) {
+  G.over = true;
+  lock(true);
+  setTimeout(() => {
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-death').classList.add('active');
+    document.getElementById('d-name').textContent  = G.leader;
+    document.getElementById('d-info').textContent  = `Day ${G.day} · ${G.dist} miles traveled`;
+    document.getElementById('d-cause').textContent = `They ${cause}`;
+  }, 700);
+}
+
+function doWin() {
+  G.over = true; G.won = true;
+  lock(true);
+  setTimeout(() => {
+    document.getElementById('screen-game').classList.remove('active');
+    document.getElementById('screen-win').classList.add('active');
+    document.getElementById('w-days').textContent   = G.day;
+    document.getElementById('w-health').textContent = G.health;
+    document.getElementById('w-food').textContent   = G.food + ' lbs';
+    const alive = G.party.filter(p=>p.alive).length + 1;
+    document.getElementById('win-msg').textContent =
+      `${G.leader} arrived in Oregon City on Day ${G.day}, ${alive} soul${alive!==1?'s':''} intact. The Willamette Valley stretched green and wide before them — worth every mile, every loss, every prayer.`;
+  }, 800);
+}
+
+function resetGame() {
+  ['screen-death','screen-win'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-title').style.display = 'flex';
+  document.getElementById('narr-scroll').innerHTML = '';
+  lock(false);
+}
+
+// ── Render ──────────────────────────────────────────────────
+function renderStatus() {
+  document.getElementById('s-day').textContent   = G.day;
+  document.getElementById('s-loc').textContent   = G.loc;
+  document.getElementById('h-loc').textContent   = G.loc;
+  document.getElementById('s-weather').textContent = G.weather;
+  document.getElementById('s-wicon').textContent   = W_ICONS[G.weather] || '☀️';
+  document.getElementById('s-food').textContent   = G.food + ' lbs';
+  document.getElementById('s-health').textContent = G.health;
+  document.getElementById('s-morale').textContent = G.morale;
+  document.getElementById('s-oxen').textContent   = G.oxen;
+
+  const trailPct = (G.dist / G.maxDist) * 100;
+  document.getElementById('s-trail').style.width = trailPct + '%';
+  document.getElementById('s-miles').textContent = `${G.dist} / ${G.maxDist} mi`;
+
+  setBar('b-food',   G.food,   500, 'pf-food',   'pf-warn', 'pf-danger', 80, 30);
+  setBar('b-health', G.health, 100, 'pf-health', 'pf-warn', 'pf-danger', 50, 25);
+  setBar('b-morale', G.morale, 100, 'pf-morale', 'pf-warn', 'pf-danger', 50, 25);
+}
+
+function setBar(id, val, max, cls, warnCls, dangerCls, warnAt, dangerAt) {
+  const el = document.getElementById(id);
+  el.style.width = Math.min(100, (val/max)*100) + '%';
+  el.className = 'pfill ' + (val < dangerAt ? dangerCls : val < warnAt ? warnCls : cls);
+}
+
+function renderParty() {
+  const c = document.getElementById('party-list');
+  c.innerHTML = '';
+  // Leader
+  c.innerHTML += `<div class="pmember"><div class="pname"><div class="pdot"></div>${esc(G.leader)}</div><div class="prole">Leader · ${G.prof}</div></div>`;
+  G.party.forEach(m => {
+    c.innerHTML += `<div class="pmember"><div class="pname"><div class="pdot${m.alive?'':' dead'}"></div>${esc(m.name)}</div><div class="prole">${m.alive ? m.role + ' · ' + m.traits : '✝ Deceased'}</div></div>`;
+  });
+}
+
+function renderResponse(r, decision) {
+  const scroll = document.getElementById('narr-scroll');
+  const block = document.createElement('div');
+  block.className = 'turn-block';
+
+  // Narration text (typewriter)
+  const narr = document.createElement('div');
+  narr.className = 'narr-text';
+  block.appendChild(narr);
+
+  // Dialogue
+  if (r.dialogue?.length) {
+    const db = document.createElement('div');
+    db.className = 'dial-block';
+    r.dialogue.forEach(d => {
+      const line = document.createElement('div');
+      line.className = 'dial-line';
+      line.innerHTML = `<span class="dial-who">${esc(d.character)}:</span><span class="dial-say">"${esc(d.line)}"</span>`;
+      db.appendChild(line);
+    });
+    block.appendChild(db);
+  }
+
+  scroll.appendChild(block);
+  typewrite(narr, r.narration || '', () => { scroll.scrollTop = scroll.scrollHeight; });
+}
+
+function addPlayerLine(txt) {
+  const scroll = document.getElementById('narr-scroll');
+  const el = document.createElement('div');
+  el.className = 'player-line';
+  el.innerHTML = `<span class="player-prefix">›</span><span class="player-text">${esc(txt)}</span>`;
+  scroll.appendChild(el);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function addLoader() {
+  const scroll = document.getElementById('narr-scroll');
+  const el = document.createElement('div');
+  el.className = 'loading-row';
+  el.innerHTML = '<div class="ldot"></div><div class="ldot"></div><div class="ldot"></div>';
+  scroll.appendChild(el);
+  scroll.scrollTop = scroll.scrollHeight;
+  return el;
+}
+
+function addErr(msg) {
+  const scroll = document.getElementById('narr-scroll');
+  const el = document.createElement('div');
+  el.className = 'err-msg';
+  el.textContent = msg;
+  scroll.appendChild(el);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function typewrite(el, text, done) {
+  el.textContent = '';
+  let i = 0;
+  (function tick() {
+    if (i < text.length) { el.textContent += text[i++]; setTimeout(tick, 16); }
+    else if (done) done();
+  })();
+}
+
+function lock(v) {
+  busy = v;
+  document.getElementById('go-btn').disabled = v;
+  document.getElementById('inp-decision').disabled = v;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
