@@ -4,7 +4,7 @@
 
 ### 🎮 [Play Now → jkh2.github.io/oregon-trail-2026](https://jkh2.github.io/oregon-trail-2026)
 
-A modern reimagining of the classic Oregon Trail powered by a single AI system. Built as a single HTML file — no framework, no build step, no backend. Deploy anywhere in seconds.
+A modern reimagining of the classic Oregon Trail with AI augmentation. Built as a single HTML file — no framework, no build step, no backend. Deploy anywhere in seconds.
 
 ---
 
