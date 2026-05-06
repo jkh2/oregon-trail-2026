@@ -266,8 +266,35 @@ body {
   width:100%; display:block;
   opacity:0; transition:opacity 0.8s ease;
   filter:sepia(30%) contrast(1.05) brightness(0.92);
+  transform-origin:center center;
 }
-.scene-img.loaded { opacity:1; }
+.scene-img.loaded {
+  opacity:1;
+  animation:kenburns 18s ease-in-out infinite alternate;
+}
+
+@keyframes kenburns {
+  0%   { transform:scale(1.0)  translate(0%,    0%);   }
+  25%  { transform:scale(1.06) translate(-1.5%, -1%);  }
+  50%  { transform:scale(1.04) translate(1%,    0.5%); }
+  75%  { transform:scale(1.08) translate(-0.5%, 1.5%); }
+  100% { transform:scale(1.05) translate(1.5%,  -0.5%);}
+}
+/* Drift right-to-left */
+@keyframes kenburns-r {
+  0%   { transform:scale(1.08) translate(1.5%,  0.5%); }
+  100% { transform:scale(1.03) translate(-1.5%, -0.5%);}
+}
+/* Slow zoom in from bottom */
+@keyframes kenburns-u {
+  0%   { transform:scale(1.0)  translate(0%,  1.5%); }
+  100% { transform:scale(1.08) translate(0.5%, -1%); }
+}
+/* Slow zoom out from top */
+@keyframes kenburns-d {
+  0%   { transform:scale(1.08) translate(-1%, -1.5%);}
+  100% { transform:scale(1.02) translate(1%,  0.5%); }
+}
 
 /* ─── INPUT ─── */
 .input-area {
@@ -328,7 +355,50 @@ body {
 }
 .epi-inp::placeholder { color:rgba(200,180,150,0.22); }
 
-.again-btn {
+.continue-btn {
+  background:rgba(200,149,42,0.12);
+  border:1px solid rgba(200,149,42,0.4); color:var(--gold);
+  font-family:'Playfair Display',serif; font-size:1.05rem;
+  font-weight:700; padding:0.85rem; cursor:pointer;
+  letter-spacing:0.08em; transition:all 0.2s;
+  display:flex; flex-direction:column; align-items:center; gap:0.2rem;
+}
+.continue-btn:hover { background:rgba(200,149,42,0.22); border-color:var(--gold); }
+.continue-btn .continue-sub {
+  font-family:'Courier Prime',monospace; font-size:0.65rem;
+  letter-spacing:0.15em; color:rgba(200,149,42,0.65);
+  font-weight:400; text-transform:uppercase;
+}
+.or-divider {
+  display:flex; align-items:center; gap:0.8rem;
+  font-size:0.65rem; color:rgba(240,230,200,0.25);
+  letter-spacing:0.2em; text-transform:uppercase;
+}
+.or-divider::before, .or-divider::after {
+  content:''; flex:1; height:1px;
+  background:rgba(61,43,26,0.6);
+}
+
+/* ─── JOURNAL ─── */
+.journal-btn {
+  background:rgba(90,138,60,0.08);
+  border:1px solid rgba(90,138,60,0.3); color:rgba(90,138,60,0.8);
+  font-family:'Courier Prime',monospace; font-size:0.75rem;
+  padding:0.6rem 0.8rem; cursor:pointer;
+  letter-spacing:0.1em; transition:all 0.2s;
+  display:flex; align-items:center; gap:0.5rem; justify-content:center;
+}
+.journal-btn:hover { background:rgba(90,138,60,0.15); border-color:rgba(90,138,60,0.5); color:#7ab85a; }
+.journal-btn.connected { background:rgba(90,138,60,0.12); border-color:rgba(90,138,60,0.5); color:#7ab85a; cursor:default; }
+.journal-note { font-size:0.6rem; color:rgba(240,230,200,0.3); letter-spacing:0.08em; line-height:1.5; text-align:center; }
+.j-indicator {
+  display:flex; align-items:center; gap:0.35rem;
+  font-size:0.6rem; letter-spacing:0.15em; color:rgba(90,138,60,0.5);
+  text-transform:uppercase;
+}
+.j-dot { width:5px; height:5px; border-radius:50%; background:rgba(90,138,60,0.4); }
+.j-dot.active { background:#7ab85a; animation:jpulse 2s ease-in-out infinite; }
+@keyframes jpulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
   background:transparent; border:1px solid rgba(61,43,26,0.6);
   color:rgba(200,180,150,0.55); font-family:'Courier Prime',monospace;
   font-size:0.7rem; letter-spacing:0.2em; padding:0.55rem 1.4rem;
@@ -395,6 +465,14 @@ body {
   <div class="divider"></div>
 
   <div class="setup-box">
+    <div id="continue-wrap" style="display:none; flex-direction:column; gap:0.6rem">
+      <button class="continue-btn" onclick="continueGame()">
+        ↩ Continue Journey
+        <span class="continue-sub" id="continue-sub">Day — · —</span>
+      </button>
+      <div class="or-divider">or start new</div>
+    </div>
+    </div><!-- /continue-wrap -->
     <div>
       <label class="flabel">Your Name</label>
       <input id="inp-name" class="finput" type="text" placeholder="Thomas Harwick" maxlength="24">
@@ -417,8 +495,15 @@ body {
       </div>
     </div>
     <button class="start-btn" onclick="startGame()">Begin the Journey West →</button>
-  </div>
-</div>
+
+    <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.3rem">
+      <button class="journal-btn" id="journal-btn" onclick="connectJournal()">
+        📓 Connect Trail Journal <span style="opacity:0.5;font-size:0.65rem">(optional)</span>
+      </button>
+      <div class="journal-note">Saves a readable .md journal to your device · Chrome/Edge only</div>
+    </div>
+  </div><!-- /setup-box -->
+</div><!-- /screen-title -->
 
 <!-- ══════════════════════════ GAME SCREEN ══════════════════════════ -->
 <div id="screen-game">
@@ -483,7 +568,13 @@ body {
   <div class="narr-panel">
     <div class="narr-header">
       <span class="narr-title">Trail Journal</span>
-      <span class="narr-loc" id="h-loc">Independence, Missouri</span>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div class="j-indicator" id="j-indicator" style="display:none">
+          <div class="j-dot active" id="j-dot"></div>
+          <span id="j-label">Journal Connected</span>
+        </div>
+        <span class="narr-loc" id="h-loc">Independence, Missouri</span>
+      </div>
     </div>
 
     <div class="narr-scroll" id="narr-scroll"></div>
@@ -577,13 +668,231 @@ const DEFAULT_PARTY = [
   { name:"Mary",   role:"Optimist", traits:"faithful, hopeful",     alive:true }
 ];
 
+// ── Event System ──────────────────────────────────────────────
+const EVENTS = {
+
+  global: [
+    { id:"ox_lame",           text:"One of the oxen has gone lame overnight — it can barely walk this morning.", stakes:"Ignored: oxen -1 within 2 days. Rested: lose 1-2 travel days. Carpenter profession can splint it.", type:"livestock" },
+    { id:"wagon_wheel",       text:"The rear wagon wheel has split along the rim. It will not survive another full day of travel.", stakes:"Must stop to repair. Without repair: wagon breaks down completely within 10 miles.", type:"mechanical" },
+    { id:"illness_onset",     text:"Someone in the party woke feverish, with chills and stomach cramps.", stakes:"Could be minor or the start of typhoid or cholera. Rest helps. Pressing on risks worsening. Health -5 to -25.", type:"disease" },
+    { id:"stranger_approach", text:"A lone rider on a tired horse catches up to the wagon. He asks to ride along for safety in numbers. His eyes keep moving to the supply boxes.", stakes:"Could be a legitimate desperate emigrant. Could be an outlaw scouting the party. Judgment required.", type:"human" },
+    { id:"storm_building",    text:"The sky to the west has gone a deep greenish-black. A severe storm is building with startling speed.", stakes:"Push through: risk lightning, hail, flooding. Make camp now: lose a day but stay safe. Oxen already nervous.", type:"weather" },
+    { id:"food_spoilage",     text:"The salt pork barrel has gone bad — the smell is unmistakable. At least half the meat supply is ruined.", stakes:"Food -70 lbs. Morale hit. Decide whether to ration immediately or push hard to the next fort.", type:"resource" },
+    { id:"party_in_distress", text:"A stopped wagon sits off the trail. A woman waves frantically — her husband is gravely ill.", stakes:"Stop to help: lose time, risk exposure to illness. Leave: morale penalty, haunts the party. Share medicine: supplies -10.", type:"human" },
+    { id:"rattlesnake_strike",text:"A scream from behind the wagon — a rattlesnake has struck from the dry grass at the trail's edge.", stakes:"Health -15 to -40. A child bite is more dangerous. Speed of response matters. Whiskey treatment may help or harm.", type:"wildlife" },
+    { id:"axle_crack",        text:"A sound like a gunshot from under the wagon — the front axle has cracked on a hidden rock.", stakes:"Must repair immediately. Cannot travel until fixed. Carpenter can fix faster. This will cost at least half a day.", type:"mechanical" },
+    { id:"morale_fracture",   text:"Samuel and the player's leadership style are generating open tension in the party. People are exhausted and frightened.", stakes:"Morale -15 if ignored. Addressed well: morale stable. A leader who listens holds the party together.", type:"morale" },
+  ],
+
+  early_plains: [
+    { id:"cholera_warning",   text:"Fresh graves beside the trail and a warning scratched on a board: CHOLERA. The river crossing is just ahead.", stakes:"Water source is suspect. Drink and risk cholera. Detour for cleaner water: lose half a day. Boil everything: slow but much safer.", type:"disease" },
+    { id:"kansas_crossing",   text:"The Kansas River runs wide and brown. No bridge. A Potawatomi man operates a crude ferry nearby and names a fair price.", stakes:"Pay ferry: safe crossing. Ford: risky at this depth. The ferryman knows these waters — his price is honest.", type:"crossing", disposition:"friendly" },
+    { id:"pawnee_tribute",    text:"Six Pawnee warriors ride out and block the trail. Their leader points at the wagon and holds up fingers — he wants tribute.", stakes:"Pay tribute: lose supplies but pass safely through their territory. Refuse: dangerous confrontation. This is their land.", type:"native", disposition:"neutral_demanding" },
+    { id:"scorpion_child",    text:"A child cries out in the night — a scorpion has stung them through the bedroll.", stakes:"Health -10 to -30. Children are far more vulnerable to scorpion venom. Cool compress helps. Party shaken and sleepless.", type:"wildlife" },
+    { id:"mud_bog",           text:"Three days of rain have turned the trail to axle-deep mud for as far as the eye can see.", stakes:"Push through: oxen exhaustion, potential broken axle. Wait for dry: lose 2-3 days. Lighten the load: must abandon cargo.", type:"weather" },
+    { id:"contaminated_well", text:"The well at the campsite looks normal but smells faintly wrong. The previous party left in a hurry — their fire is still warm.", stakes:"Drink: cholera risk. Boil everything: time consuming. Move on without water: party and oxen suffer.", type:"disease" },
+  ],
+
+  plains: [
+    { id:"buffalo_stampede",  text:"A buffalo herd of thousands stretches horizon to horizon. The ground trembles. The trail runs directly through them.", stakes:"Hunt: major food gain but stampede risk. Wait for herd to pass: hours or days lost. Push through: extreme danger.", type:"wildlife" },
+    { id:"platte_crossing",   text:"The South Platte River: wide, shallow, but with treacherous quicksand bottom that can swallow a wagon whole.", stakes:"Ford carefully: slow but survivable. Rush across: risk being mired. Sioux are watching from the bank — their read of the crossing matters.", type:"crossing" },
+    { id:"sioux_trade",       text:"A Sioux trading party — men, women, and children — approaches with horses and dried buffalo meat. Their manner is open.", stakes:"Trade fairly: gain significant food, possibly horses. Hostility or suspicion here insults a powerful Nation with a long memory.", type:"native", disposition:"friendly" },
+    { id:"alkali_water",      text:"The only water source ahead for ten miles is a white-rimmed alkali pool. The oxen smell it and strain desperately toward it.", stakes:"Let oxen drink: health -15, oxen severely weakened. Find another source: adds miles, thirsty animals. Vinegar mixture helps slightly.", type:"resource" },
+    { id:"prairie_dog_town",  text:"The trail runs through a vast prairie dog colony for nearly a mile — hundreds of burrow holes, some a foot across.", stakes:"Rush through: real risk of broken wheel or lame ox stepping in a hole. Navigate carefully: slow but safe.", type:"hazard" },
+    { id:"sioux_ridge",       text:"Twenty Sioux warriors sit motionless on the ridge above the trail, watching the wagon below. Not one moves. Not one speaks.", stakes:"They are assessing, not attacking. Showing fear or aggression could change that. Calm, respectful behavior is the correct read.", type:"native", disposition:"neutral_watchful" },
+    { id:"chimney_rock",      text:"Chimney Rock rises impossibly from the plain — the landmark every emigrant knows from the journals. But a rattlesnake is coiled on the shaded pack where a child just reached.", stakes:"Health -25 if the child is struck. Careful, fast action can prevent it. Panic makes it worse.", type:"wildlife" },
+    { id:"outlaw_camp",       text:"Three rough men are camped at the trail fork ahead, watching your wagon approach with too much interest.", stakes:"Go around: lose time but avoid risk. Pass through: they may demand tribute or worse. Their horses are better than yours.", type:"human" },
+  ],
+
+  rockies: [
+    { id:"grizzly_raid",      text:"A grizzly has raided camp in the night — scattered supplies, terrified oxen, one animal missing entirely.", stakes:"Food -30, morale -15, possibly oxen -1. The bear may return. Moving out immediately vs. searching for the missing ox.", type:"wildlife" },
+    { id:"shoshone_guide",    text:"An older Shoshone man approaches alone, unhurried. He points at the mountain pass ahead, then at himself, then the trail ahead.", stakes:"He is offering to guide the party through the pass. This knowledge is worth days and possibly lives. Rejection is a serious mistake.", type:"native", disposition:"friendly" },
+    { id:"grade_too_steep",   text:"The trail rises at a brutal angle. The oxen heave and collapse to their knees. The wagon is simply too heavy.", stakes:"Must abandon cargo to continue. Furniture? Tools? The seed grain for Oregon? Every choice costs something in the future.", type:"hazard" },
+    { id:"sublette_cutoff",   text:"A fork in the trail. A rough sign: SUBLETTE CUTOFF — SAVES 2 DAYS. It does not mention the 50 miles with no water whatsoever.", stakes:"Major risk/reward. Current water supply and oxen condition determine viability. Getting this wrong could be fatal.", type:"decision" },
+    { id:"wolf_livestock",    text:"Wolves circled the camp all night howling. One got to a weakened ox — the animal has a torn flank and is losing blood.", stakes:"Treat the ox: slow down, use supplies, may save it. Push on: ox dies within two days. Party exhausted from sleepless night.", type:"wildlife" },
+    { id:"deserter_rider",    text:"A hard-looking man on a good horse asks to join the party. Claims he is from an Army detail. His uniform is torn and he carries no papers.", stakes:"Could be a deserter. Could be an outlaw. Could be legitimate. He is well-armed and watching the party's reaction very carefully.", type:"human" },
+    { id:"mountain_storm",    text:"A violent mountain storm descends without warning — hail, lightning, freezing rain. The trail has become a running river.", stakes:"Take cover: lose 1-2 days. Push through: health -15, real lightning risk to exposed people. Oxen panicking badly.", type:"weather" },
+    { id:"independence_rock", text:"Independence Rock. Emigrants carve their names to prove they passed. But the date is what matters: past July 4th here means the mountain snow will not wait.", stakes:"A calendar reckoning. Too late means the party must push hard and rest minimally or risk being caught in the Rockies in October.", type:"milestone" },
+    { id:"mountain_lion",     text:"A mountain lion took a small ox calf in broad daylight — it happened in seconds. The big cat is still watching from the rocks above.", stakes:"Oxen -1. Morale hit. The cat may follow the party. Children absolutely must not be left alone. Fires at night are essential.", type:"wildlife" },
+  ],
+
+  desert: [
+    { id:"water_crisis",      text:"No water for thirty miles. The oxen's tongues are swollen white. One animal has simply stopped moving and won't rise.", stakes:"Oxen -1 if not resolved immediately. Health -10 for the party. Everything depends on what happens in the next few hours.", type:"resource" },
+    { id:"heat_collapse",     text:"The August heat is savage. A party member has collapsed on the trail and cannot be roused by voice or touch.", stakes:"Stop immediately, shade and water: save a life. Push on: health -25, possible death. Every minute in the sun costs.", type:"disease" },
+    { id:"bannock_night",     text:"The oxen explode into terrified chaos in the darkness — someone is cutting them loose from the picket line.", stakes:"Bannock raiders. Respond fast and decisively or lose animals. Shooting blindly into darkness risks hitting nothing — or worse. Oxen -1 to -2.", type:"native", disposition:"hostile" },
+    { id:"paiute_ambush",     text:"Without any warning, arrows strike the wagon canvas and the dirt around the party's feet. The shots came from the rocks to the left.", stakes:"Hostile encounter in Paiute territory. Speed and decisiveness determine outcomes. This is not a negotiation.", type:"native", disposition:"hostile" },
+    { id:"abandoned_wagon",   text:"A fully intact wagon sits alone beside the trail. No people, no animals. Contents appear untouched. No explanation anywhere.", stakes:"Valuable supplies possible. But why was it abandoned? Disease? Raiders? The mystery is real and affects the risk of stopping.", type:"discovery" },
+    { id:"fake_cutoff",       text:"A friendly man at the trail junction directs wagons toward a cutoff with great enthusiasm, claiming it saves three days. He wants a small fee.", stakes:"This exact scenario killed real emigrants. The cutoff may be genuine or a death trap. His eagerness for payment is a warning sign.", type:"human" },
+    { id:"sidewinder",        text:"A sidewinder rattlesnake is coiled under the wagon in the morning shade. Someone nearly stepped directly on it.", stakes:"Health -20 to -45 if struck. Desert rattlesnakes carry more venom than plains varieties. Careful deliberate removal is possible.", type:"wildlife" },
+    { id:"dust_storm",        text:"A wall of brown dust a mile high is moving toward the party at speed. It will arrive in minutes.", stakes:"Take cover and seal everything: lose hours but preserve food from contamination. Push through: health -10, supplies fouled.", type:"weather" },
+  ],
+
+  cascades: [
+    { id:"columbia_river",    text:"The Columbia River roars ahead — brown, enormous, and absolutely impassable on foot or by wagon. There is no ford.", stakes:"Hire Native canoes: costs supplies, proven safe. Build a raft: genuinely dangerous. Barlow Road around Mt Hood: adds 5 days. Cannot delay.", type:"crossing" },
+    { id:"cayuse_territory",  text:"The wagon enters the shadow of the Blue Mountains. Every emigrant since 1847 knows this land. Cayuse territory. Whitman Mission territory.", stakes:"Heightened danger. Aggressive behavior could provoke attack. But not all Cayuse are hostile — judgment and respect matter here.", type:"native", disposition:"neutral_hostile" },
+    { id:"native_ferry",      text:"Skilled Native ferrymen wait at the river bend with large, well-made canoes. They are clearly experienced at this work. Their price is named directly.", stakes:"Their price is fair for the service. Negotiating too hard insults professionals who may be the only way across. A raft attempt here is very dangerous.", type:"native", disposition:"friendly" },
+    { id:"early_snow_pass",   text:"Snow falls on the Blue Mountains — and it is only mid-September. Two weeks early by any honest reckoning.", stakes:"The pass may close permanently within days. Everything now depends on the next decisions. Push hard or risk being trapped until spring.", type:"weather" },
+    { id:"starvation_final",  text:"The last real food is gone. Oregon City is still 180 miles away. The party is eating boiled leather strips and whatever can be hunted each desperate morning.", stakes:"Health -8 per day until food is found. Morale is collapsing. Every decision now is survival first, speed second.", type:"resource" },
+    { id:"mountain_lion_2",   text:"A mountain lion has been following the party for two days. Last night it took another ox. It is bolder than any animal should be.", stakes:"Oxen -1. Children in genuine danger now. Must address this directly or it escalates. Night watches are draining the exhausted party.", type:"wildlife" },
+    { id:"willamette_view",   text:"From a high ridge, through morning mist, someone spots what can only be the Willamette Valley spread below. The party goes completely silent.", stakes:"Oregon City is still days away. Exhaustion, excitement, and relief are all real threats to judgment now. The trail is not finished yet.", type:"milestone" },
+  ]
+};
+
+function getZone() {
+  if (G.dist < 316)  return 'early_plains';
+  if (G.dist < 640)  return 'plains';
+  if (G.dist < 1000) return 'rockies';
+  if (G.dist < 1288) return 'desert';
+  return 'cascades';
+}
+
+function rollEvent() {
+  if (Math.random() < 0.12) return null; // quiet day — 12% chance
+  const zone = getZone();
+  const zonePool   = EVENTS[zone]   || [];
+  const globalPool = EVENTS.global  || [];
+  const pool = Math.random() < 0.62 ? zonePool : globalPool;
+  if (!pool.length) return globalPool[Math.floor(Math.random() * globalPool.length)];
+  // Avoid repeating same event twice in a row
+  const filtered = pool.filter(e => e.id !== G.lastEventId);
+  const chosen = filtered.length ? filtered : pool;
+  const event = chosen[Math.floor(Math.random() * chosen.length)];
+  G.lastEventId = event.id;
+  return event;
+}
+
 // ── State ───────────────────────────────────────────────────
 let G = {};          // game state
 let history = [];    // conversation history for API
 let busy = false;
 let groqKey = '';    // set on key screen
 
-// ── Key screen ──────────────────────────────────────────────
+// ── Journal (File System Access API) ────────────────────────
+let journalHandle = null;   // FileSystemFileHandle
+let journalSupported = ('showDirectoryPicker' in window);
+
+async function connectJournal() {
+  if (!journalSupported) {
+    alert('Trail Journal requires Chrome or Edge. Your browser does not support the File System Access API.');
+    return;
+  }
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    journalHandle = await dirHandle.getFileHandle('oregon-trail-journal.md', { create: true });
+    setJournalIndicator(true);
+    const btn = document.getElementById('journal-btn');
+    btn.textContent = '📓 Journal Connected';
+    btn.classList.add('connected');
+    btn.onclick = null;
+  } catch(e) {
+    if (e.name !== 'AbortError') console.error('Journal connect failed:', e);
+  }
+}
+
+function setJournalIndicator(on) {
+  const ind = document.getElementById('j-indicator');
+  if (ind) ind.style.display = on ? 'flex' : 'none';
+}
+
+async function readJournal() {
+  if (!journalHandle) return '';
+  try {
+    const file = await journalHandle.getFile();
+    return await file.text();
+  } catch(e) { console.warn('Journal read failed:', e); return ''; }
+}
+
+async function appendJournal(entry) {
+  if (!journalHandle) return;
+  try {
+    const existing = await readJournal();
+    const writable = await journalHandle.createWritable();
+    await writable.write(existing + entry);
+    await writable.close();
+  } catch(e) { console.warn('Journal write failed:', e); }
+}
+
+async function initJournalFile(leaderName, prof) {
+  if (!journalHandle) return;
+  try {
+    const existing = await readJournal();
+    // Only write header if file is empty (new game)
+    if (existing.trim() === '') {
+      const header = `# Oregon Trail Journal — ${leaderName}\n` +
+        `*Profession: ${prof} · Departed: Spring 1848*\n\n` +
+        `---\n\n`;
+      const writable = await journalHandle.createWritable();
+      await writable.write(header);
+      await writable.close();
+    }
+  } catch(e) { console.warn('Journal init failed:', e); }
+}
+
+async function writeJournalEntry(response) {
+  if (!journalHandle || !response) return;
+  const sk = G.party[0], op = G.party[1];
+  let entry = `## Day ${G.day} — ${G.loc}\n`;
+  entry += `*${G.weather} · ${G.dist}/${G.maxDist} miles · Food:${G.food}lbs · Health:${G.health} · Morale:${G.morale} · Oxen:${G.oxen}*\n\n`;
+  if (response.narration) entry += `${response.narration}\n\n`;
+  if (response.dialogue?.length) {
+    response.dialogue.forEach(d => { entry += `> **${d.character}:** "${d.line}"\n`; });
+    entry += '\n';
+  }
+  entry += '---\n\n';
+  await appendJournal(entry);
+}
+
+// ── Save / Load ─────────────────────────────────────────────
+const SAVE_KEY = 'oregon-trail-2026-save';
+
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ G, history }));
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function clearSave() {
+  localStorage.removeItem(SAVE_KEY);
+}
+
+function checkForSave() {
+  const save = loadSave();
+  if (!save || !save.G || save.G.over) return;
+  const wrap = document.getElementById('continue-wrap');
+  const sub  = document.getElementById('continue-sub');
+  wrap.style.display = 'flex';
+  sub.textContent = `Day ${save.G.day} · ${save.G.loc}`;
+}
+
+function continueGame() {
+  const save = loadSave();
+  if (!save) return;
+  G = save.G;
+  history = save.history || [];
+
+  document.getElementById('screen-title').style.display = 'none';
+  document.getElementById('screen-game').classList.add('active');
+
+  renderStatus();
+  renderParty();
+
+  // Show a resume notice in the journal
+  const scroll = document.getElementById('narr-scroll');
+  const el = document.createElement('div');
+  el.style.cssText = 'font-size:0.7rem;color:rgba(200,149,42,0.45);font-style:italic;letter-spacing:0.1em;padding:0.3rem 0;text-align:center';
+  el.textContent = `— Journey resumed · Day ${G.day} · ${G.loc} —`;
+  scroll.appendChild(el);
+
+  lock(false);
+  document.getElementById('inp-decision').focus();
+}
 function submitKey() {
   const val = document.getElementById('inp-key').value.trim();
   if (!val) {
@@ -597,6 +906,7 @@ function submitKey() {
   groqKey = val;
   document.getElementById('screen-key').style.display = 'none';
   document.getElementById('screen-title').style.display = 'flex';
+  checkForSave();
 }
 
 function newState(leader, prof) {
@@ -616,7 +926,9 @@ function newState(leader, prof) {
     party:  JSON.parse(JSON.stringify(DEFAULT_PARTY)),
     events: [],
     over:   false,
-    won:    false
+    won:    false,
+    activeEvent:  null,
+    lastEventId:  null
   };
 }
 
@@ -632,24 +944,37 @@ function startGame() {
   const prof = document.querySelector('.prof-btn.sel')?.dataset.p || 'farmer';
   G = newState(name, prof);
   history = [];
+  clearSave();
 
   document.getElementById('screen-title').style.display = 'none';
   document.getElementById('screen-game').classList.add('active');
+  setJournalIndicator(!!journalHandle);
 
   renderStatus();
   renderParty();
+  initJournalFile(name, prof);
   openingScene();
 }
 
 // ── Opening scene ───────────────────────────────────────────
 async function openingScene() {
   lock(true);
-  const msg = `The year is 1848. ${G.leader} stands at the edge of Independence, Missouri, wagon loaded and oxen yoked. The trail west stretches beyond the horizon. Describe the scene as ${G.leader} begins — the sounds, the weight of what lies ahead, the first steps onto the trail. Then give me the first situation they must decide.`;
+  // Roll a starting event so the player immediately has something to react to
+  const firstEvent = rollEvent() || EVENTS.early_plains[0];
+  G.activeEvent = firstEvent;
+  const eventLine = firstEvent
+    ? `\nIMMEDIATE SITUATION TO PRESENT: "${firstEvent.text}"\nEnd your opening by presenting this situation clearly so the player knows exactly what they must decide.`
+    : '';
+
+  const msg = `The year is 1848. ${G.leader} stands at the edge of Independence, Missouri — wagon loaded, oxen yoked, the trail stretching west into everything unknown. Describe the scene briefly: the sounds, the weight of what lies ahead, the first steps onto the trail. Then immediately present the first situation the party faces. The player must have something real and pressing to respond to right now.${eventLine}`;
   history.push({ role:"user", content: msg });
   const loader = addLoader();
   const resp = await callAI();
   loader.remove();
-  if (resp) renderResponse(resp, null);
+  if (resp) {
+    renderResponse(resp, null);
+    writeJournalEntry(resp);
+  }
   lock(false);
   document.getElementById('inp-decision').focus();
 }
@@ -679,6 +1004,9 @@ async function submitDecision() {
     renderStatus();
     renderParty();
     checkEnd();
+    saveGame();
+    writeJournalEntry(resp);
+    setJournalIndicator(!!journalHandle);
   }
 
   lock(false);
@@ -686,14 +1014,26 @@ async function submitDecision() {
 }
 
 function buildContext(decision) {
+  const event = rollEvent();
+  G.activeEvent = event;
+
+  const eventSection = event
+    ? `\nEVENT NOW UNFOLDING:\n"${event.text}"\nHistorical stakes: ${event.stakes}${event.disposition ? '\nNative disposition (hidden from player — evaluate their response against this): ' + event.disposition : ''}`
+    : '';
+
   return `DAY ${G.day} | ${G.loc} | ${G.dist}/${G.maxDist} mi | Weather:${G.weather}
 Food:${G.food}lbs | Health:${G.health} | Morale:${G.morale} | Oxen:${G.oxen}
 Alive: ${G.party.filter(p=>p.alive).map(p=>p.name).join(', ')}
 Recent: ${G.events.slice(-4).join(' | ') || 'Journey just begun'}
+${eventSection}
 
-${G.leader} decides: "${decision}"
+${G.leader}'s decision: "${decision}"
 
-Resolve this. Return JSON only.`;
+First resolve ${G.leader}'s decision from the previous situation.
+Then weave the EVENT NOW UNFOLDING into the scene — make it feel earned and real.
+Evaluate whether the decision was wise. Apply consequences accordingly.
+End your narration with the immediate pressure of the current event bearing down on the party.
+Return JSON only.`;
 }
 
 function dailyTick() {
@@ -705,26 +1045,34 @@ function dailyTick() {
 }
 
 // ── AI Call ─────────────────────────────────────────────────
-function sysPrompt() {
+function sysPrompt(journalContext) {
   const sk = G.party[0], op = G.party[1];
+  const journalSection = journalContext
+    ? `\nTRAIL HISTORY (your long-term memory — everything that has happened so far):\n${journalContext}\n`
+    : '';
   return `You are the narrator and simulation engine for The Oregon Trail (1848). ${G.leader} leads a wagon from Independence, Missouri to Oregon City — 2000 miles of American frontier.
 
 PARTY:
 - ${G.leader} (Leader, ${G.prof}): Bears the weight of every decision.
 - ${sk.name} (Skeptic): Cautious, weathered, plain-spoken. Questions decisions but stays loyal. References hardship.
 - ${op.name} (Optimist): Finds faith in difficulty. May reference scripture. Never naive — has seen the trail.
-
+${journalSection}
 YOUR THREE JOBS:
-1. NARRATE: 2–4 sentences. Grounded, vivid, historically accurate. Draw on real trail details — river crossings, disease (dysentery, cholera, fever), broken wagon wheels, oxen deaths, harsh weather, buffalo herds, other wagon parties, the Platte River, Chimney Rock, South Pass.
-2. DIALOGUE: 1–2 party member lines. Each voice must be unmistakably distinct. Max 20 words each.
-3. STATE EFFECTS: Realistic resource outcomes. Distance usually 10–25 miles/day. Bad decisions cost. Occasionally trigger events — a random illness, a river crossing, a storm, a fort encounter, hunting success or failure.
+1. NARRATE: 2–4 sentences. Grounded, vivid, historically accurate. Draw on real trail details — river crossings, disease (dysentery, cholera, fever), broken wagon wheels, oxen deaths, harsh weather, buffalo herds, other wagon parties, the Platte River, Chimney Rock, South Pass. Weave in any EVENT provided.
+2. DIALOGUE: 1–2 party member lines. Each voice must be unmistakably distinct. Max 20 words each. Samuel warns of danger and doubts rash decisions. Mary finds faith and urges openness to strangers. Use them as a CLUE SYSTEM — their instincts reflect the hidden reality of the situation.
+3. STATE EFFECTS: Realistic resource consequences. Distance usually 10–25 miles/day. Evaluate the player's decision quality against the actual situation. Good decisions on hostile native encounters differ from good decisions on friendly ones.
 
 RULES:
 - Serious frontier realism. No fantasy.
 - Reference classic Oregon Trail moments naturally (dysentery, broken axle, bad crossing).
-- Characters can reference what they know — "You have dysentery" should feel historically real, not like a game notification.
-- Weather changes occasionally. Oxen dying is catastrophic. Starvation is slow death.
-- Party members react to the specific decision — if it was foolish, Samuel says so.
+- ALWAYS end your narration with an immediate vivid situation bearing down on the party — the next thing they must face. If an EVENT is provided, make it the closing pressure. If not, create an appropriate trail situation for this zone and day.
+- Never leave the party in neutral. The trail never rests.
+- For Native encounters: the player does not know the disposition. Evaluate their response honestly — a hostile response to a friendly party causes real damage; passivity toward a hostile party invites attack. Samuel's wariness and Mary's openness are clues to read.
+- Wildlife: animals are not predictable. Hesitation costs. Panic costs more.
+- Human threats: criminals and desperate men read weakness. Confidence and decisiveness matter.
+- Weather changes occasionally and should feel inevitable, not random.
+- Reference past events from TRAIL HISTORY naturally when dramatically relevant.
+- Characters remember what has happened — if an ox died last week, Samuel mentions it.
 
 RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
 {
@@ -745,8 +1093,14 @@ RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
 
 async function callAI() {
   try {
+    // Read journal for long-term context (last 4000 chars to stay within limits)
+    const journalRaw = await readJournal();
+    const journalContext = journalRaw.length > 4000
+      ? '...[earlier entries]\n\n' + journalRaw.slice(-4000)
+      : journalRaw;
+
     const messages = [
-      { role: "system", content: sysPrompt() },
+      { role: "system", content: sysPrompt(journalContext) },
       ...history
     ];
 
@@ -840,6 +1194,7 @@ function checkEnd() {
 
 function doDeath(cause) {
   G.over = true;
+  clearSave();
   lock(true);
   setTimeout(() => {
     document.getElementById('screen-game').classList.remove('active');
@@ -852,6 +1207,7 @@ function doDeath(cause) {
 
 function doWin() {
   G.over = true; G.won = true;
+  clearSave();
   lock(true);
   setTimeout(() => {
     document.getElementById('screen-game').classList.remove('active');
@@ -963,8 +1319,13 @@ function fetchSceneImage(prompt, wrap, skeleton) {
 
   img.onload = () => {
     skeleton.remove();
+    // Randomly vary the Ken Burns direction and duration so each scene feels unique
+    const duration = 14 + Math.floor(Math.random() * 8); // 14-22s
+    const directions = ['kenburns', 'kenburns-r', 'kenburns-u', 'kenburns-d'];
+    const anim = directions[Math.floor(Math.random() * directions.length)];
+    img.style.animationDuration = `${duration}s`;
+    img.dataset.kbAnim = anim;
     wrap.appendChild(img);
-    // Trigger fade-in on next frame
     requestAnimationFrame(() => { requestAnimationFrame(() => { img.classList.add('loaded'); }); });
     document.getElementById('narr-scroll').scrollTop = document.getElementById('narr-scroll').scrollHeight;
   };
