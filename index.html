@@ -240,6 +240,35 @@ body {
 
 .err-msg { font-size:0.78rem; color:var(--rust); font-style:italic; padding:0.3rem 0; }
 
+/* ─── SCENE IMAGE ─── */
+.scene-img-wrap {
+  position:relative; width:100%;
+  border:1px solid rgba(61,43,26,0.5);
+  overflow:hidden; background:#0a0806;
+  margin-top:0.3rem;
+}
+.scene-img-skeleton {
+  width:100%; height:220px;
+  background: linear-gradient(90deg, #0f0b07 25%, #1a1208 50%, #0f0b07 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.6s infinite;
+  display:flex; align-items:center; justify-content:center;
+}
+@keyframes shimmer {
+  0%   { background-position:200% 0; }
+  100% { background-position:-200% 0; }
+}
+.scene-img-label {
+  font-size:0.6rem; letter-spacing:0.2em;
+  color:rgba(200,149,42,0.3); text-transform:uppercase;
+}
+.scene-img {
+  width:100%; display:block;
+  opacity:0; transition:opacity 0.8s ease;
+  filter:sepia(30%) contrast(1.05) brightness(0.92);
+}
+.scene-img.loaded { opacity:1; }
+
 /* ─── INPUT ─── */
 .input-area {
   padding:0.9rem 1.4rem;
@@ -709,7 +738,8 @@ RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
     "distance_change": 15
   },
   "event_summary": "five word summary",
-  "weather_update": "Clear"
+  "weather_update": "Clear",
+  "image_prompt": "vivid 8-10 word visual description of the scene for image generation, e.g. 'covered wagon fording river storm approaching prairie 1848'"
 }`;
 }
 
@@ -885,6 +915,19 @@ function renderResponse(r, decision) {
   const block = document.createElement('div');
   block.className = 'turn-block';
 
+  // Scene image — starts as skeleton, loads async
+  if (r.image_prompt) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'scene-img-wrap';
+    const skeleton = document.createElement('div');
+    skeleton.className = 'scene-img-skeleton';
+    skeleton.innerHTML = '<span class="scene-img-label">Rendering scene…</span>';
+    imgWrap.appendChild(skeleton);
+    block.appendChild(imgWrap);
+    // Load image in background
+    fetchSceneImage(r.image_prompt, imgWrap, skeleton);
+  }
+
   // Narration text (typewriter)
   const narr = document.createElement('div');
   narr.className = 'narr-text';
@@ -905,6 +948,33 @@ function renderResponse(r, decision) {
 
   scroll.appendChild(block);
   typewrite(narr, r.narration || '', () => { scroll.scrollTop = scroll.scrollHeight; });
+}
+
+function fetchSceneImage(prompt, wrap, skeleton) {
+  // Append frontier style guidance to every prompt
+  const styled = `${prompt}, 1848 American frontier, dramatic natural lighting, painterly historical illustration, wide landscape`;
+  const encoded = encodeURIComponent(styled);
+  const seed = Math.floor(Math.random() * 99999);
+  const url = `https://image.pollinations.ai/prompt/${encoded}?width=800&height=360&nologo=true&seed=${seed}&model=flux`;
+
+  const img = document.createElement('img');
+  img.className = 'scene-img';
+  img.alt = prompt;
+
+  img.onload = () => {
+    skeleton.remove();
+    wrap.appendChild(img);
+    // Trigger fade-in on next frame
+    requestAnimationFrame(() => { requestAnimationFrame(() => { img.classList.add('loaded'); }); });
+    document.getElementById('narr-scroll').scrollTop = document.getElementById('narr-scroll').scrollHeight;
+  };
+
+  img.onerror = () => {
+    // Silently remove skeleton on failure — don't break the game
+    skeleton.remove();
+  };
+
+  img.src = url;
 }
 
 function addPlayerLine(txt) {
