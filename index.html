@@ -28,10 +28,43 @@ body {
   color: var(--paper);
 }
 
+/* ─── KEY ENTRY SCREEN ─── */
+#screen-key {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at 50% 35%, #241508 0%, #0d0a06 65%);
+  padding:2rem; z-index:20;
+}
+.key-box {
+  width:100%; max-width:440px;
+  background:rgba(17,13,8,0.9);
+  border:1px solid var(--border);
+  padding:2rem; display:flex;
+  flex-direction:column; gap:1.1rem;
+  text-align:center;
+}
+.key-icon { font-size:2.5rem; opacity:0.7; }
+.key-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.5rem; font-weight:900;
+  color:var(--paper);
+}
+.key-desc {
+  font-size:0.8rem; color:rgba(240,230,200,0.55);
+  line-height:1.7;
+}
+.key-desc a { color:var(--gold); text-decoration:none; }
+.key-desc a:hover { text-decoration:underline; }
+.key-err {
+  font-size:0.75rem; color:var(--rust);
+  font-style:italic; min-height:1rem;
+}
+
 /* ─── TITLE SCREEN ─── */
 #screen-title {
   position:fixed; inset:0;
-  display:flex; flex-direction:column;
+  display:none; flex-direction:column;
   align-items:center; justify-content:center;
   background: radial-gradient(ellipse at 50% 35%, #241508 0%, #0d0a06 65%);
   padding:2rem; z-index:10;
@@ -304,6 +337,27 @@ body {
 </head>
 <body>
 
+<!-- ══════════════════════════ KEY ENTRY SCREEN ══════════════════════════ -->
+<div id="screen-key">
+  <div class="key-box">
+    <div class="key-icon">🗝️</div>
+    <div class="key-title">Groq API Key Required</div>
+    <div class="key-desc">
+      This game runs on <strong style="color:var(--paper)">Groq's free AI API</strong> — no cost, no credit card.<br><br>
+      Get your free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a> → sign up → API Keys → Create Key.<br>
+      Takes about 2 minutes. Your key stays in your browser only.
+    </div>
+    <div>
+      <label class="flabel" style="text-align:left">Groq API Key</label>
+      <input id="inp-key" class="finput" type="password"
+             placeholder="gsk_••••••••••••••••••••••••••••••••"
+             onkeydown="if(event.key==='Enter')submitKey()">
+    </div>
+    <div class="key-err" id="key-err"></div>
+    <button class="start-btn" onclick="submitKey()">Enter the Frontier →</button>
+  </div>
+</div>
+
 <!-- ══════════════════════════ TITLE SCREEN ══════════════════════════ -->
 <div id="screen-title">
   <div class="wagon-icon">🐂</div>
@@ -498,6 +552,23 @@ const DEFAULT_PARTY = [
 let G = {};          // game state
 let history = [];    // conversation history for API
 let busy = false;
+let groqKey = '';    // set on key screen
+
+// ── Key screen ──────────────────────────────────────────────
+function submitKey() {
+  const val = document.getElementById('inp-key').value.trim();
+  if (!val) {
+    document.getElementById('key-err').textContent = 'Please enter your Groq API key.';
+    return;
+  }
+  if (!val.startsWith('gsk_')) {
+    document.getElementById('key-err').textContent = 'Groq keys start with gsk_ — check and try again.';
+    return;
+  }
+  groqKey = val;
+  document.getElementById('screen-key').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'flex';
+}
 
 function newState(leader, prof) {
   const b = PROFESSIONS[prof];
@@ -644,26 +715,39 @@ RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
 
 async function callAI() {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const messages = [
+      { role: "system", content: sysPrompt() },
+      ...history
+    ];
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${groqKey}`
+      },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "llama-3.3-70b-versatile",
         max_tokens: 900,
-        system: sysPrompt(),
-        messages: history
+        temperature: 0.8,
+        messages
       })
     });
 
     if (!res.ok) {
       const e = await res.json();
       console.error("API:", e);
-      addErr("Something went wrong on the trail. Try again.");
+      const msg = e?.error?.message || '';
+      if (msg.includes('auth') || msg.includes('key') || msg.includes('invalid')) {
+        addErr("Invalid API key. Check your Groq key and reload the page.");
+      } else {
+        addErr("Something went wrong on the trail. Try again.");
+      }
       return null;
     }
 
     const data = await res.json();
-    const raw = data.content?.[0]?.text || '';
+    const raw = data.choices?.[0]?.message?.content || '';
 
     let parsed;
     try {
