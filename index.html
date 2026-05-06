@@ -188,6 +188,33 @@ body {
 
 .oxen-row { font-size:0.72rem; color:rgba(240,230,200,0.55); }
 
+/* ─── PACE & RATIONS ─── */
+.ctrl-btns { display:flex; flex-wrap:wrap; gap:0.2rem; margin-top:0.3rem; }
+.ctrl-btn {
+  background:rgba(240,230,200,0.04); border:1px solid rgba(61,43,26,0.4);
+  color:rgba(240,230,200,0.45); font-family:'Courier Prime',monospace;
+  font-size:0.58rem; padding:0.25rem 0.38rem; cursor:pointer;
+  text-transform:uppercase; letter-spacing:0.08em; transition:all 0.15s; line-height:1;
+}
+.ctrl-btn:hover { border-color:rgba(200,149,42,0.4); color:rgba(240,230,200,0.8); }
+.ctrl-btn.active { background:rgba(200,149,42,0.15); border-color:var(--gold); color:var(--gold); }
+.ctrl-btn.danger-active { background:rgba(139,44,44,0.2); border-color:var(--rust); color:var(--rust); }
+
+/* ─── ACTION BAR ─── */
+.action-bar {
+  display:flex; gap:0.35rem; flex-wrap:wrap; padding:0.6rem 1.4rem 0;
+  border-top:1px solid rgba(61,43,26,0.3); background:rgba(17,13,8,0.3);
+}
+.act-btn {
+  background:rgba(240,230,200,0.05); border:1px solid rgba(61,43,26,0.5);
+  color:rgba(240,230,200,0.65); font-family:'Courier Prime',monospace;
+  font-size:0.7rem; padding:0.38rem 0.7rem; cursor:pointer;
+  transition:all 0.15s; letter-spacing:0.05em; white-space:nowrap;
+}
+.act-btn:hover { background:rgba(200,149,42,0.1); border-color:rgba(200,149,42,0.4); color:var(--paper); }
+.act-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.act-btn.fort-btn { border-color:rgba(200,149,42,0.5); color:var(--gold); background:rgba(200,149,42,0.08); }
+
 /* ─── NARRATIVE PANEL ─── */
 .narr-panel {
   flex:1; display:flex; flex-direction:column;
@@ -239,6 +266,40 @@ body {
 @keyframes ldot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.1)} }
 
 .err-msg { font-size:0.78rem; color:var(--rust); font-style:italic; padding:0.3rem 0; }
+
+/* ─── CHOICES ─── */
+.choices-block {
+  display:flex; flex-direction:column; gap:0.4rem;
+  padding-left:0.8rem; margin-top:0.2rem;
+}
+.choice-btn {
+  background:rgba(240,230,200,0.04);
+  border:1px solid rgba(61,43,26,0.5);
+  color:rgba(240,230,200,0.8);
+  font-family:'Courier Prime',monospace; font-size:0.82rem;
+  padding:0.5rem 0.8rem; cursor:pointer;
+  text-align:left; transition:all 0.15s;
+  line-height:1.4; letter-spacing:0.01em;
+}
+.choice-btn:hover {
+  background:rgba(200,149,42,0.1);
+  border-color:rgba(200,149,42,0.4);
+  color:var(--paper);
+}
+.choice-btn::before {
+  content:'› '; color:var(--gold); font-weight:700;
+}
+.choice-else {
+  background:transparent;
+  border:1px dashed rgba(61,43,26,0.4);
+  color:rgba(240,230,200,0.35);
+  font-style:italic;
+}
+.choice-else:hover {
+  background:rgba(240,230,200,0.03);
+  border-color:rgba(61,43,26,0.6);
+  color:rgba(240,230,200,0.6);
+}
 
 /* ─── SCENE IMAGE ─── */
 .scene-img-wrap {
@@ -472,7 +533,6 @@ body {
       </button>
       <div class="or-divider">or start new</div>
     </div>
-    </div><!-- /continue-wrap -->
     <div>
       <label class="flabel">Your Name</label>
       <input id="inp-name" class="finput" type="text" placeholder="Thomas Harwick" maxlength="24">
@@ -558,6 +618,26 @@ body {
     </div>
 
     <div>
+      <div class="s-head">Pace</div>
+      <div class="ctrl-btns" id="pace-btns">
+        <button class="ctrl-btn" data-pace="grueling"   onclick="setPace('grueling')">Grueling</button>
+        <button class="ctrl-btn" data-pace="strenuous"  onclick="setPace('strenuous')">Strenuous</button>
+        <button class="ctrl-btn active" data-pace="steady" onclick="setPace('steady')">Steady</button>
+        <button class="ctrl-btn" data-pace="easy"       onclick="setPace('easy')">Easy</button>
+        <button class="ctrl-btn" data-pace="resting"    onclick="setPace('resting')">Rest</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="s-head">Rations</div>
+      <div class="ctrl-btns" id="ration-btns">
+        <button class="ctrl-btn" data-rat="filling"    onclick="setRations('filling')">Filling</button>
+        <button class="ctrl-btn active" data-rat="meager" onclick="setRations('meager')">Meager</button>
+        <button class="ctrl-btn" data-rat="bare_bones" onclick="setRations('bare_bones')">Bare Bones</button>
+      </div>
+    </div>
+
+    <div>
       <div class="s-head">Party</div>
       <div id="party-list" style="display:flex;flex-direction:column;gap:0.45rem"></div>
     </div>
@@ -580,12 +660,20 @@ body {
     <div class="narr-scroll" id="narr-scroll"></div>
 
     <div class="input-area">
-      <div class="input-lbl">What do you do?</div>
-      <div class="input-row">
-        <input id="inp-decision" class="decision-inp" type="text"
-               placeholder="Press onward… make camp… attempt the ford…"
-               onkeydown="if(event.key==='Enter')submitDecision()">
-        <button id="go-btn" class="go-btn" onclick="submitDecision()">Decide →</button>
+      <div class="action-bar">
+        <button class="act-btn" id="act-continue" onclick="quickAction('continue')">🏕️ Continue</button>
+        <button class="act-btn" id="act-hunt"     onclick="quickAction('hunt')">🦌 Hunt</button>
+        <button class="act-btn" id="act-rest"     onclick="quickAction('rest')">🛌 Rest</button>
+        <button class="act-btn fort-btn" id="act-trade" style="display:none" onclick="quickAction('trade')">🏪 Trade at Fort</button>
+      </div>
+      <div style="padding:0.6rem 1.4rem 0.9rem">
+        <div class="input-lbl" style="margin-bottom:0.45rem">Or describe your own action:</div>
+        <div class="input-row">
+          <input id="inp-decision" class="decision-inp" type="text"
+                 placeholder="Something else entirely…"
+                 onkeydown="if(event.key==='Enter')submitDecision()">
+          <button id="go-btn" class="go-btn" onclick="submitDecision()">Decide →</button>
+        </div>
       </div>
     </div>
   </div><!-- /narr-panel -->
@@ -928,8 +1016,58 @@ function newState(leader, prof) {
     over:   false,
     won:    false,
     activeEvent:  null,
-    lastEventId:  null
+    lastEventId:  null,
+    pace:    "steady",   // grueling, strenuous, steady, easy, resting
+    rations: "meager"    // filling, meager, bare_bones
   };
+}
+
+// ── Pace & Rations ──────────────────────────────────────────
+const FORTS = [
+  { name:"Fort Kearney", dist:316 },
+  { name:"Fort Laramie", dist:640 },
+  { name:"Fort Hall",    dist:1288 }
+];
+
+function setPace(pace) {
+  G.pace = pace;
+  document.querySelectorAll('#pace-btns .ctrl-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pace === pace);
+    b.classList.toggle('danger-active', b.dataset.pace === pace && (pace === 'grueling'));
+  });
+}
+
+function setRations(rat) {
+  G.rations = rat;
+  document.querySelectorAll('#ration-btns .ctrl-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.rat === rat);
+    b.classList.toggle('danger-active', b.dataset.rat === rat && rat === 'bare_bones');
+  });
+}
+
+function quickAction(action) {
+  if (busy || G.over) return;
+  const actions = {
+    continue: `Press onward at ${G.pace} pace with ${G.rations.replace('_',' ')} rations`,
+    hunt:     `Stop to hunt for food`,
+    rest:     `Make camp and rest for the day`,
+    trade:    `Stop at the fort to trade and resupply`
+  };
+  const inp = document.getElementById('inp-decision');
+  inp.value = actions[action] || action;
+  submitDecision();
+}
+
+function checkFortProximity() {
+  const tradeBtn = document.getElementById('act-trade');
+  if (!tradeBtn) return;
+  const nearFort = FORTS.find(f => Math.abs(G.dist - f.dist) < 40);
+  if (nearFort) {
+    tradeBtn.style.display = 'inline-block';
+    tradeBtn.textContent = `🏪 Trade at ${nearFort.name}`;
+  } else {
+    tradeBtn.style.display = 'none';
+  }
 }
 
 // ── Profession picker ───────────────────────────────────────
@@ -1017,31 +1155,61 @@ function buildContext(decision) {
   const event = rollEvent();
   G.activeEvent = event;
 
+  const paceLabel   = { grueling:"Grueling (25+ mi/day, health draining)", strenuous:"Strenuous (20 mi/day)", steady:"Steady (15 mi/day)", easy:"Easy (10 mi/day)", resting:"Resting (camp, recovering health)" };
+  const rationLabel = { filling:"Filling (eating well, food depleting fast)", meager:"Meager (normal)", bare_bones:"Bare Bones (starving, health declining)" };
+
   const eventSection = event
-    ? `\nEVENT NOW UNFOLDING:\n"${event.text}"\nHistorical stakes: ${event.stakes}${event.disposition ? '\nNative disposition (hidden from player — evaluate their response against this): ' + event.disposition : ''}`
+    ? `\nEVENT NOW UNFOLDING:\n"${event.text}"\nHistorical stakes: ${event.stakes}${event.disposition ? '\nNative disposition (hidden from player): ' + event.disposition : ''}`
     : '';
 
-  return `DAY ${G.day} | ${G.loc} | ${G.dist}/${G.maxDist} mi | Weather:${G.weather}
+  // Detect action type for special handling
+  const isHunt  = decision.toLowerCase().includes('hunt');
+  const isRest  = decision.toLowerCase().includes('rest') || decision.toLowerCase().includes('camp');
+  const isTrade = decision.toLowerCase().includes('trade') || decision.toLowerCase().includes('fort');
+
+  const huntNote  = isHunt  ? `\nHUNTING: Determine success based on zone (${getZone()}) and weather. Plains: buffalo possible (40-120 lbs). Mountains: deer/elk (20-60 lbs). Desert: scarce (0-20 lbs). Describe what was found and hunted. Reflect in food_change.` : '';
+  const restNote  = isRest  ? `\nRESTING: The party makes camp. Health recovers significantly. Distance_change should be 0-3. Morale improves. Describe the camp scene.` : '';
+  const tradeNote = isTrade ? `\nFORT TRADING: The party stops at the nearest fort. They can buy food (+50-100 lbs, costs morale as supplies are poor quality and expensive), get information about the trail ahead, and repair equipment. Health +5 from rest. Morale ±5.` : '';
+
+  return `DAY ${G.day} | ${G.loc} | ${G.dist}/${G.maxDist} mi | Weather:${G.weather} | Season:${G.season}
 Food:${G.food}lbs | Health:${G.health} | Morale:${G.morale} | Oxen:${G.oxen}
+Current Pace: ${paceLabel[G.pace]}
+Current Rations: ${rationLabel[G.rations]}
 Alive: ${G.party.filter(p=>p.alive).map(p=>p.name).join(', ')}
 Recent: ${G.events.slice(-4).join(' | ') || 'Journey just begun'}
-${eventSection}
+${eventSection}${huntNote}${restNote}${tradeNote}
 
 ${G.leader}'s decision: "${decision}"
 
-First resolve ${G.leader}'s decision from the previous situation.
-Then weave the EVENT NOW UNFOLDING into the scene — make it feel earned and real.
-Evaluate whether the decision was wise. Apply consequences accordingly.
-End your narration with the immediate pressure of the current event bearing down on the party.
+Resolve this decision. Apply pace to distance_change (${G.pace === 'resting' ? '0–3' : G.pace === 'easy' ? '7–12' : G.pace === 'steady' ? '12–18' : G.pace === 'strenuous' ? '16–23' : '22–30'} miles appropriate for today).
+Weave in the EVENT if provided — make it feel real, not bolted on.
+Evaluate decision quality honestly. End narration with immediate next pressure.
 Return JSON only.`;
 }
 
 function dailyTick() {
-  // Basic daily food consumption
-  const alive = G.party.filter(p=>p.alive).length + 1; // +1 for leader
-  const consume = Math.round(alive * 2.5 * (G.weather === 'Storm' || G.weather === 'Snow' ? 1.4 : 1));
+  const alive = G.party.filter(p=>p.alive).length + 1;
+  const weatherMult = (G.weather === 'Storm' || G.weather === 'Snow') ? 1.3 : 1;
+
+  // Food consumption by rations setting
+  const rationRate = { filling: 1.5, meager: 1.0, bare_bones: 0.4 };
+  const consume = Math.round(alive * 2.8 * rationRate[G.rations] * weatherMult);
   G.food = Math.max(0, G.food - consume);
-  if (G.food === 0) G.health = Math.max(0, G.health - 4);
+
+  // Starvation penalty
+  if (G.food === 0) G.health = Math.max(0, G.health - 6);
+
+  // Rations health effect
+  const rationHealth = { filling: +2, meager: 0, bare_bones: -4 };
+  G.health = Math.max(0, Math.min(100, G.health + rationHealth[G.rations]));
+
+  // Pace health effect
+  const paceHealth = { grueling: -5, strenuous: -2, steady: 0, easy: +2, resting: +6 };
+  G.health = Math.max(0, Math.min(100, G.health + paceHealth[G.pace]));
+
+  // Morale drifts toward center slowly
+  if (G.morale > 60) G.morale = Math.max(60, G.morale - 1);
+  if (G.morale < 40) G.morale = Math.min(40, G.morale + 1);
 }
 
 // ── AI Call ─────────────────────────────────────────────────
@@ -1067,17 +1235,26 @@ RULES:
 - Reference classic Oregon Trail moments naturally (dysentery, broken axle, bad crossing).
 - ALWAYS end your narration with an immediate vivid situation bearing down on the party — the next thing they must face. If an EVENT is provided, make it the closing pressure. If not, create an appropriate trail situation for this zone and day.
 - Never leave the party in neutral. The trail never rests.
-- For Native encounters: the player does not know the disposition. Evaluate their response honestly — a hostile response to a friendly party causes real damage; passivity toward a hostile party invites attack. Samuel's wariness and Mary's openness are clues to read.
+- PACE: Honor the distance range given in the context. A resting party moves 0–3 miles. A grueling pace shows in the narration — exhausted oxen, blistered feet, camp made in darkness.
+- RATIONS: Bare bones rations should be felt — hunger mentioned, morale fragile. Filling rations show in party energy and spirits.
+- HUNTING: When hunting occurs, describe it vividly. What animal, how the shot went, what was brought back. Failure is possible and should be narrated honestly.
+- FORT TRADING: Describe the fort — its smell, the other emigrants, the overpriced goods. Information from other travelers can be shared here.
+- For Native encounters: the player does not know the disposition. Evaluate their response honestly. Samuel's wariness and Mary's openness are clues.
 - Wildlife: animals are not predictable. Hesitation costs. Panic costs more.
 - Human threats: criminals and desperate men read weakness. Confidence and decisiveness matter.
 - Weather changes occasionally and should feel inevitable, not random.
 - Reference past events from TRAIL HISTORY naturally when dramatically relevant.
-- Characters remember what has happened — if an ox died last week, Samuel mentions it.
 
 RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
 {
   "narration": "string",
   "dialogue": [{"character":"name","line":"string"}],
+  "choices": [
+    "First concrete option the player could take",
+    "Second concrete option",
+    "Third concrete option",
+    "Fourth concrete option (optional)"
+  ],
   "state_effects": {
     "food_change": 0,
     "health_change": 0,
@@ -1088,7 +1265,14 @@ RESPOND IN THIS JSON FORMAT ONLY — no markdown, no preamble:
   "event_summary": "five word summary",
   "weather_update": "Clear",
   "image_prompt": "vivid 8-10 word visual description of the scene for image generation, e.g. 'covered wagon fording river storm approaching prairie 1848'"
-}`;
+}
+
+CHOICES RULES:
+- Always provide 3-4 choices that are concrete, distinct, and genuinely viable.
+- Each choice should be a real action a person could take — not vague ("do nothing") or identical in outcome.
+- Choices should reflect the actual stakes of the situation — one safe/slow option, one bold/risky option, one creative option.
+- For Native encounters, choices should vary in approach (trade, acknowledge respectfully, defend, retreat) without revealing the hidden disposition.
+- The player can always ignore the choices and type something else entirely.`;
 }
 
 async function callAI() {
@@ -1248,6 +1432,18 @@ function renderStatus() {
   setBar('b-food',   G.food,   500, 'pf-food',   'pf-warn', 'pf-danger', 80, 30);
   setBar('b-health', G.health, 100, 'pf-health', 'pf-warn', 'pf-danger', 50, 25);
   setBar('b-morale', G.morale, 100, 'pf-morale', 'pf-warn', 'pf-danger', 50, 25);
+
+  // Sync pace/rations button states (in case loaded from save)
+  document.querySelectorAll('#pace-btns .ctrl-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pace === G.pace);
+    b.classList.toggle('danger-active', b.dataset.pace === G.pace && G.pace === 'grueling');
+  });
+  document.querySelectorAll('#ration-btns .ctrl-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.rat === G.rations);
+    b.classList.toggle('danger-active', b.dataset.rat === G.rations && G.rations === 'bare_bones');
+  });
+
+  checkFortProximity();
 }
 
 function setBar(id, val, max, cls, warnCls, dangerCls, warnAt, dangerAt) {
@@ -1271,7 +1467,7 @@ function renderResponse(r, decision) {
   const block = document.createElement('div');
   block.className = 'turn-block';
 
-  // Scene image — starts as skeleton, loads async
+  // Scene image
   if (r.image_prompt) {
     const imgWrap = document.createElement('div');
     imgWrap.className = 'scene-img-wrap';
@@ -1280,7 +1476,6 @@ function renderResponse(r, decision) {
     skeleton.innerHTML = '<span class="scene-img-label">Rendering scene…</span>';
     imgWrap.appendChild(skeleton);
     block.appendChild(imgWrap);
-    // Load image in background
     fetchSceneImage(r.image_prompt, imgWrap, skeleton);
   }
 
@@ -1300,6 +1495,41 @@ function renderResponse(r, decision) {
       db.appendChild(line);
     });
     block.appendChild(db);
+  }
+
+  // Choices
+  if (r.choices?.length) {
+    const cb = document.createElement('div');
+    cb.className = 'choices-block';
+
+    r.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice;
+      btn.onclick = () => {
+        // Disable all choice buttons in this block after selection
+        cb.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
+        // Fill input and submit
+        const inp = document.getElementById('inp-decision');
+        inp.value = choice;
+        submitDecision();
+      };
+      cb.appendChild(btn);
+    });
+
+    // "Something else" option
+    const elseBtn = document.createElement('button');
+    elseBtn.className = 'choice-btn choice-else';
+    elseBtn.textContent = 'Something else...';
+    elseBtn.onclick = () => {
+      cb.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
+      const inp = document.getElementById('inp-decision');
+      inp.value = '';
+      inp.focus();
+    };
+    cb.appendChild(elseBtn);
+
+    block.appendChild(cb);
   }
 
   scroll.appendChild(block);
@@ -1379,6 +1609,10 @@ function lock(v) {
   busy = v;
   document.getElementById('go-btn').disabled = v;
   document.getElementById('inp-decision').disabled = v;
+  ['act-continue','act-hunt','act-rest','act-trade'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = v;
+  });
 }
 
 function esc(s) {
